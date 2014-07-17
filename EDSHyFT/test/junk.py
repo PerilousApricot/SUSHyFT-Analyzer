@@ -245,7 +245,7 @@ process.pfTupleEle = cms.EDFilter("EDSHyFTSelector",
             minNdof = cms.double(4.0),
             NPV = cms.int32(1),
             maxRho = cms.double(2.0),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+            pvSrc = cms.InputTag("offlinePrimaryVertices")
         ),
         tauEtaMax = cms.double(2.4),
         elDist = cms.double(0.02),
@@ -266,7 +266,7 @@ process.pfTupleEle = cms.EDFilter("EDSHyFTSelector",
             rhoSrc = cms.InputTag("kt6PFJetsForIsolation","rho"),
             dZ_EB = cms.double(0.1),
             dphi_EB = cms.double(0.03),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices"),
+            pvSrc = cms.InputTag("offlinePrimaryVertices"),
             dZ_EE = cms.double(0.1),
             mHits = cms.int32(0),
             reliso_EE = cms.double(0.1),
@@ -302,7 +302,7 @@ process.pfTupleEle = cms.EDFilter("EDSHyFTSelector",
         muTrig = cms.string('HLT_Mu9'),
         jetSrc = cms.InputTag("goodPatJetsPFSF"),
         identifier = cms.string('AK5 PF'),
-        pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+        pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     useData = cms.bool(False)
 )
@@ -338,7 +338,7 @@ process.pfTupleEleCA8Pruned = cms.EDFilter("EDSHyFTSelector",
             minNdof = cms.double(4.0),
             NPV = cms.int32(1),
             maxRho = cms.double(2.0),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+            pvSrc = cms.InputTag("offlinePrimaryVertices")
         ),
         tauEtaMax = cms.double(2.4),
         elDist = cms.double(0.02),
@@ -359,7 +359,7 @@ process.pfTupleEleCA8Pruned = cms.EDFilter("EDSHyFTSelector",
             rhoSrc = cms.InputTag("kt6PFJetsForIsolation","rho"),
             dZ_EB = cms.double(0.1),
             dphi_EB = cms.double(0.03),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices"),
+            pvSrc = cms.InputTag("offlinePrimaryVertices"),
             dZ_EE = cms.double(0.1),
             mHits = cms.int32(0),
             reliso_EE = cms.double(0.1),
@@ -395,7 +395,7 @@ process.pfTupleEleCA8Pruned = cms.EDFilter("EDSHyFTSelector",
         muTrig = cms.string('HLT_Mu9'),
         jetSrc = cms.InputTag("goodPatJetsCA8PrunedPF"),
         identifier = cms.string('CA8 Prunded PF'),
-        pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+        pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     useData = cms.bool(False)
 )
@@ -431,7 +431,7 @@ process.pfTupleEleLoose = cms.EDFilter("EDSHyFTSelector",
             minNdof = cms.double(4.0),
             NPV = cms.int32(1),
             maxRho = cms.double(2.0),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+            pvSrc = cms.InputTag("offlinePrimaryVertices")
         ),
         tauEtaMax = cms.double(2.4),
         elDist = cms.double(0.02),
@@ -452,7 +452,7 @@ process.pfTupleEleLoose = cms.EDFilter("EDSHyFTSelector",
             rhoSrc = cms.InputTag("kt6PFJetsForIsolation","rho"),
             dZ_EB = cms.double(0.1),
             dphi_EB = cms.double(0.03),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices"),
+            pvSrc = cms.InputTag("offlinePrimaryVertices"),
             dZ_EE = cms.double(0.1),
             mHits = cms.int32(0),
             reliso_EE = cms.double(0.1),
@@ -488,7 +488,7 @@ process.pfTupleEleLoose = cms.EDFilter("EDSHyFTSelector",
         muTrig = cms.string('HLT_Mu9'),
         jetSrc = cms.InputTag("goodPatJetsPFSF"),
         identifier = cms.string('AK5 PF Loose electrons'),
-        pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+        pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     useData = cms.bool(False)
 )
@@ -524,7 +524,7 @@ process.pfTupleEleMetRes090 = cms.EDFilter("EDSHyFTSelector",
             minNdof = cms.double(4.0),
             NPV = cms.int32(1),
             maxRho = cms.double(2.0),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+            pvSrc = cms.InputTag("offlinePrimaryVertices")
         ),
         tauEtaMax = cms.double(2.4),
         elDist = cms.double(0.02),
@@ -545,7 +545,7 @@ process.pfTupleEleMetRes090 = cms.EDFilter("EDSHyFTSelector",
             rhoSrc = cms.InputTag("kt6PFJetsForIsolation","rho"),
             dZ_EB = cms.double(0.1),
             dphi_EB = cms.double(0.03),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices"),
+            pvSrc = cms.InputTag("offlinePrimaryVertices"),
             dZ_EE = cms.double(0.1),
             mHits = cms.int32(0),
             reliso_EE = cms.double(0.1),
@@ -581,7 +581,7 @@ process.pfTupleEleMetRes090 = cms.EDFilter("EDSHyFTSelector",
         muTrig = cms.string('HLT_Mu9'),
         jetSrc = cms.InputTag("goodPatJetsPFSF"),
         identifier = cms.string('PFMETRES090'),
-        pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+        pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     useData = cms.bool(False)
 )
@@ -617,7 +617,7 @@ process.pfTupleEleMetRes110 = cms.EDFilter("EDSHyFTSelector",
             minNdof = cms.double(4.0),
             NPV = cms.int32(1),
             maxRho = cms.double(2.0),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+            pvSrc = cms.InputTag("offlinePrimaryVertices")
         ),
         tauEtaMax = cms.double(2.4),
         elDist = cms.double(0.02),
@@ -638,7 +638,7 @@ process.pfTupleEleMetRes110 = cms.EDFilter("EDSHyFTSelector",
             rhoSrc = cms.InputTag("kt6PFJetsForIsolation","rho"),
             dZ_EB = cms.double(0.1),
             dphi_EB = cms.double(0.03),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices"),
+            pvSrc = cms.InputTag("offlinePrimaryVertices"),
             dZ_EE = cms.double(0.1),
             mHits = cms.int32(0),
             reliso_EE = cms.double(0.1),
@@ -674,7 +674,7 @@ process.pfTupleEleMetRes110 = cms.EDFilter("EDSHyFTSelector",
         muTrig = cms.string('HLT_Mu9'),
         jetSrc = cms.InputTag("goodPatJetsPFSF"),
         identifier = cms.string('PFMETRES110'),
-        pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+        pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     useData = cms.bool(False)
 )
@@ -710,7 +710,7 @@ process.pfTupleMu = cms.EDFilter("EDSHyFTSelector",
             minNdof = cms.double(4.0),
             NPV = cms.int32(1),
             maxRho = cms.double(2.0),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+            pvSrc = cms.InputTag("offlinePrimaryVertices")
         ),
         tauEtaMax = cms.double(2.4),
         elDist = cms.double(0.02),
@@ -731,7 +731,7 @@ process.pfTupleMu = cms.EDFilter("EDSHyFTSelector",
             rhoSrc = cms.InputTag("kt6PFJetsForIsolation","rho"),
             dZ_EB = cms.double(0.1),
             dphi_EB = cms.double(0.03),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices"),
+            pvSrc = cms.InputTag("offlinePrimaryVertices"),
             dZ_EE = cms.double(0.1),
             mHits = cms.int32(0),
             reliso_EE = cms.double(0.1),
@@ -767,7 +767,7 @@ process.pfTupleMu = cms.EDFilter("EDSHyFTSelector",
         muTrig = cms.string('HLT_Mu9'),
         jetSrc = cms.InputTag("goodPatJetsPFSF"),
         identifier = cms.string('AK5 PF'),
-        pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+        pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     useData = cms.bool(False)
 )
@@ -803,7 +803,7 @@ process.pfTupleMuCA8Pruned = cms.EDFilter("EDSHyFTSelector",
             minNdof = cms.double(4.0),
             NPV = cms.int32(1),
             maxRho = cms.double(2.0),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+            pvSrc = cms.InputTag("offlinePrimaryVertices")
         ),
         tauEtaMax = cms.double(2.4),
         elDist = cms.double(0.02),
@@ -824,7 +824,7 @@ process.pfTupleMuCA8Pruned = cms.EDFilter("EDSHyFTSelector",
             rhoSrc = cms.InputTag("kt6PFJetsForIsolation","rho"),
             dZ_EB = cms.double(0.1),
             dphi_EB = cms.double(0.03),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices"),
+            pvSrc = cms.InputTag("offlinePrimaryVertices"),
             dZ_EE = cms.double(0.1),
             mHits = cms.int32(0),
             reliso_EE = cms.double(0.1),
@@ -860,7 +860,7 @@ process.pfTupleMuCA8Pruned = cms.EDFilter("EDSHyFTSelector",
         muTrig = cms.string('HLT_Mu9'),
         jetSrc = cms.InputTag("goodPatJetsCA8PrunedPF"),
         identifier = cms.string('CA8 Prunded PF'),
-        pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+        pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     useData = cms.bool(False)
 )
@@ -896,7 +896,7 @@ process.pfTupleMuLoose = cms.EDFilter("EDSHyFTSelector",
             minNdof = cms.double(4.0),
             NPV = cms.int32(1),
             maxRho = cms.double(2.0),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+            pvSrc = cms.InputTag("offlinePrimaryVertices")
         ),
         tauEtaMax = cms.double(2.4),
         elDist = cms.double(0.02),
@@ -917,7 +917,7 @@ process.pfTupleMuLoose = cms.EDFilter("EDSHyFTSelector",
             rhoSrc = cms.InputTag("kt6PFJetsForIsolation","rho"),
             dZ_EB = cms.double(0.1),
             dphi_EB = cms.double(0.03),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices"),
+            pvSrc = cms.InputTag("offlinePrimaryVertices"),
             dZ_EE = cms.double(0.1),
             mHits = cms.int32(0),
             reliso_EE = cms.double(0.1),
@@ -953,7 +953,7 @@ process.pfTupleMuLoose = cms.EDFilter("EDSHyFTSelector",
         muTrig = cms.string('HLT_Mu9'),
         jetSrc = cms.InputTag("goodPatJetsPFSF"),
         identifier = cms.string('AK5 PF Loose muons'),
-        pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+        pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     useData = cms.bool(False)
 )
@@ -989,7 +989,7 @@ process.pfTupleMuMetRes090 = cms.EDFilter("EDSHyFTSelector",
             minNdof = cms.double(4.0),
             NPV = cms.int32(1),
             maxRho = cms.double(2.0),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+            pvSrc = cms.InputTag("offlinePrimaryVertices")
         ),
         tauEtaMax = cms.double(2.4),
         elDist = cms.double(0.02),
@@ -1010,7 +1010,7 @@ process.pfTupleMuMetRes090 = cms.EDFilter("EDSHyFTSelector",
             rhoSrc = cms.InputTag("kt6PFJetsForIsolation","rho"),
             dZ_EB = cms.double(0.1),
             dphi_EB = cms.double(0.03),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices"),
+            pvSrc = cms.InputTag("offlinePrimaryVertices"),
             dZ_EE = cms.double(0.1),
             mHits = cms.int32(0),
             reliso_EE = cms.double(0.1),
@@ -1046,7 +1046,7 @@ process.pfTupleMuMetRes090 = cms.EDFilter("EDSHyFTSelector",
         muTrig = cms.string('HLT_Mu9'),
         jetSrc = cms.InputTag("goodPatJetsPFSF"),
         identifier = cms.string('PFMETRES090'),
-        pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+        pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     useData = cms.bool(False)
 )
@@ -1082,7 +1082,7 @@ process.pfTupleMuMetRes110 = cms.EDFilter("EDSHyFTSelector",
             minNdof = cms.double(4.0),
             NPV = cms.int32(1),
             maxRho = cms.double(2.0),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+            pvSrc = cms.InputTag("offlinePrimaryVertices")
         ),
         tauEtaMax = cms.double(2.4),
         elDist = cms.double(0.02),
@@ -1103,7 +1103,7 @@ process.pfTupleMuMetRes110 = cms.EDFilter("EDSHyFTSelector",
             rhoSrc = cms.InputTag("kt6PFJetsForIsolation","rho"),
             dZ_EB = cms.double(0.1),
             dphi_EB = cms.double(0.03),
-            pvSrc = cms.InputTag("goodOfflinePrimaryVertices"),
+            pvSrc = cms.InputTag("offlinePrimaryVertices"),
             dZ_EE = cms.double(0.1),
             mHits = cms.int32(0),
             reliso_EE = cms.double(0.1),
@@ -1139,7 +1139,7 @@ process.pfTupleMuMetRes110 = cms.EDFilter("EDSHyFTSelector",
         muTrig = cms.string('HLT_Mu9'),
         jetSrc = cms.InputTag("goodPatJetsPFSF"),
         identifier = cms.string('PFMETRES110'),
-        pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+        pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     useData = cms.bool(False)
 )
@@ -1171,7 +1171,7 @@ process.out = cms.OutputModule("PoolOutputModule",
         'keep *_patTrigger_*_*', 
         'keep *_kt6PFJetsForIsolation_rho_*', 
         'keep *_kt6PFJets_rho_*', 
-        'keep *_goodOfflinePrimaryVertices_*_*', 
+        'keep *_offlinePrimaryVertices_*_*', 
         'keep *_caPrunedPFlow_SubJets_*', 
         'drop *_pfTuple*MetRes*_*_*', 
         'keep *_pfTuple*MetRes*_MET_*', 

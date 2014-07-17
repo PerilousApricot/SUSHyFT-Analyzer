@@ -123,7 +123,7 @@ process.out = cms.OutputModule("PoolOutputModule",
                                                                       'keep *_pfShyftSkim_*_*',
                                                                       'keep *_*_pileupWeights_*',
                                                                       'keep PileupSummaryInfos_*_*_*',
-                                                                      'keep *_goodOfflinePrimaryVertices_*_*',
+                                                                      'keep *_offlinePrimaryVertices_*_*',
                                                                       'keep patMETs_patMETsPFlow_*_*'),
                                dropMetaData = cms.untracked.string("DROPPED")
                                )

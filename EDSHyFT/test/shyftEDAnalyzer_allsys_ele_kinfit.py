@@ -93,7 +93,7 @@ process.pfShyftSkim = cms.EDFilter('EDWPlusJetsSelector',
     electronSrc = cms.InputTag('selectedPatElectronsPFlow'),
     metSrc = cms.InputTag('patMETsPFlow'),
     jetSrc = cms.InputTag('goodPatJetsPFlow'),
-    pvSrc   = cms.InputTag('goodOfflinePrimaryVertices'),
+    pvSrc   = cms.InputTag('offlinePrimaryVertices'),
     ePlusJets = cms.bool( True ),
     muPlusJets = cms.bool(False),
     usePFIso = cms.bool(True),
@@ -391,7 +391,7 @@ process.out.outputCommands += ['keep *_kinFitTtSemiLepEvent*_*_*',
                                'keep *_pfShyftSkim*_*_*',
                                'keep *_tprimeNtupleDumper*_*_*',
                                'keep PileupSummaryInfos_*_*_*',
-                               'keep *_goodOfflinePrimaryVertices_*_*',
+                               'keep *_offlinePrimaryVertices_*_*',
                                'keep *_prunedGenParticles_*_*'
                                ]
 

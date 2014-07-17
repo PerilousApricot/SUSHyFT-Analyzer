@@ -611,7 +611,7 @@ elif options.PUWeights == '3DEleHad':
     print 'running 3D PU weights for EleHad data'
 
 vertH  = Handle ("std::vector<reco::Vertex>")
-vertLabel = ("goodOfflinePrimaryVertices")
+vertLabel = ("offlinePrimaryVertices")
 
 puInfoHandle = Handle("std::vector<PileupSummaryInfo>")
 puInfoLabel = ("addPileupInfo")

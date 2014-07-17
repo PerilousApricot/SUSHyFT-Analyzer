@@ -14,7 +14,7 @@ wplusjetsAnalysis = cms.PSet(
     
     # Primary vertex
     pvSelector = cms.PSet(
-    pvSrc = cms.InputTag('goodOfflinePrimaryVertices'),
+    pvSrc = cms.InputTag('offlinePrimaryVertices'),
     minNdof = cms.double(4.0),
     maxZ = cms.double(24.0),
     maxRho = cms.double(2.0),
@@ -29,7 +29,7 @@ wplusjetsAnalysis = cms.PSet(
     trigSrc = cms.InputTag('patTriggerEvent'),
     muTrig = cms.string('HLT_Mu9'),
     eleTrig = cms.string('HLT_Ele10_LW_L1R'),
-    pvSrc   = cms.InputTag('goodOfflinePrimaryVertices'),
+    pvSrc   = cms.InputTag('offlinePrimaryVertices'),
     rhoSrc  = cms.InputTag('kt6PFJets', 'rho'),
     rhoIsoSrc = cms.InputTag("kt6PFJetsForIsolation", 'rho'),
     pfEleSrc  = cms.InputTag("particleFlow"),

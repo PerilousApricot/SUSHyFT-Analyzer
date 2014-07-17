@@ -378,7 +378,7 @@ trigH = Handle("pat::TriggerEvent")
 trigLabel = ("patTriggerEvent", "")
 
 vertH  = Handle ("std::vector<reco::Vertex>")
-vertLabel = ("goodOfflinePrimaryVertices")
+vertLabel = ("offlinePrimaryVertices")
 
 pileupWeightsH = Handle ("std::vector<float>")
 pileupWeightsLabel = ("pileupReweightingProducer","pileupWeights")

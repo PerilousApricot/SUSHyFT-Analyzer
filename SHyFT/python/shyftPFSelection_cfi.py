@@ -24,7 +24,7 @@ shyftPFSelection = cms.PSet(
     trigSrc = cms.InputTag('patTriggerEvent'),
     rhoSrc = cms.InputTag('kt6PFJetsPFlow', 'rho'),
     trig = cms.string(''),
-    pvSrc   = cms.InputTag('goodOfflinePrimaryVertices'),    
+    pvSrc   = cms.InputTag('offlinePrimaryVertices'),    
     # kinematic cuts
     minJets        = cms.int32( 1 ),
     muPtMin        = cms.double( 20.0 ),

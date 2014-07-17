@@ -88,7 +88,7 @@ process.pfShyftSkim = cms.EDFilter('EDWPlusJetsSelector',
     metSrc = cms.InputTag('patMETsPFlow'),
     jetSrc = cms.InputTag('goodPatJetsPFlow'),
     trigSrc = cms.InputTag('patTriggerEvent'), # PFlow
-    pvSrc   = cms.InputTag('goodOfflinePrimaryVertices'),
+    pvSrc   = cms.InputTag('offlinePrimaryVertices'),
     muonIdTight = cms.PSet(
       version = cms.string('FALL10'),
       Chi2 = cms.double(10.0),
@@ -106,7 +106,7 @@ process.pfShyftSkim = cms.EDFilter('EDWPlusJetsSelector',
       cutsToIgnore = cms.vstring('ED0', 'SD0', 'ECalVeto', 'HCalVeto'),
       RecalcFromBeamSpot = cms.bool(False),
       beamLineSrc = cms.InputTag("offlineBeamSpot"),
-      pvSrc = cms.InputTag("goodOfflinePrimaryVertices"),
+      pvSrc = cms.InputTag("offlinePrimaryVertices"),
     ),
     muonIdLoose = cms.PSet(
        beamLineSrc = cms.InputTag("offlineBeamSpot"),
@@ -125,13 +125,13 @@ process.pfShyftSkim = cms.EDFilter('EDWPlusJetsSelector',
        RecalcFromBeamSpot = cms.bool(False),
        NHits = cms.int32(-1),
        D0 = cms.double(999.0),
-       pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+       pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     pvSelector = cms.PSet(
         maxZ = cms.double(15.0),
         minNdof = cms.double(4.0),
         maxRho = cms.double(2.0),
-        pvSrc = cms.InputTag("goodOfflinePrimaryVertices")
+        pvSrc = cms.InputTag("offlinePrimaryVertices")
     ),
     eleTrig = cms.string(TRIGGER),
     ePlusJets = cms.bool(True),

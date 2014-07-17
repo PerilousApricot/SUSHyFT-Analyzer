@@ -20,7 +20,7 @@ cutbasedIDSelector = cms.PSet(
     reliso_EE  = cms.double(1.0e-01),
     mHits      = cms.int32(0),
     vtxFitConv = cms.bool(True),
-    pvSrc      = cms.InputTag("goodOfflinePrimaryVertices"),
+    pvSrc      = cms.InputTag("offlinePrimaryVertices"),
     rhoSrc     = cms.InputTag("kt6PFJetsForIsolation", 'rho'),
     cutsToIgnore = cms.vstring(""), 
     )

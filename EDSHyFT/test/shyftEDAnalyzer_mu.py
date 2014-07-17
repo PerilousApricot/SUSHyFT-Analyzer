@@ -187,7 +187,7 @@ if options.ttbsmPAT > 0 and options.use42X > 0:
         ePlusJets = cms.bool( False ),
         muPlusJets = cms.bool( True ),
         eleTrig = cms.string(options.triggerName),	
-        pvSrc   = cms.InputTag('goodOfflinePrimaryVertices'),
+        pvSrc   = cms.InputTag('offlinePrimaryVertices'),
         jetPtMin = cms.double(30.0),##
         minJets = cms.int32(5),
         metMin = cms.double(30.0),

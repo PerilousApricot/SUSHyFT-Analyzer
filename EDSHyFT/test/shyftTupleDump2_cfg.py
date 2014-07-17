@@ -115,7 +115,7 @@ process.pfShyftProducerMu = cms.EDFilter('EDSHyFTSelector',
         electronSrc = cms.InputTag('selectedPatElectronsPFlow'),
         metSrc = cms.InputTag('patMETsPFlow'),
         jetSrc = cms.InputTag('goodPatJetsPFlow'),
-        pvSrc   = cms.InputTag('goodOfflinePrimaryVertices'),
+        pvSrc   = cms.InputTag('offlinePrimaryVertices'),
         ePlusJets = cms.bool( False ),
         muPlusJets = cms.bool( True ),
         muTrig = cms.string(options.triggerName),
@@ -158,7 +158,7 @@ process.pfShyftProducerEle = cms.EDFilter('EDSHyFTSelector',
         electronSrc = cms.InputTag('selectedPatElectronsPFlow'),
         metSrc = cms.InputTag('patMETsPFlow'),
         jetSrc = cms.InputTag('goodPatJetsPFlow'),
-        pvSrc   = cms.InputTag('goodOfflinePrimaryVertices'),
+        pvSrc   = cms.InputTag('offlinePrimaryVertices'),
         ePlusJets = cms.bool( True ),
         muPlusJets = cms.bool( False ),
         muTrig = cms.string(options.triggerName),
@@ -465,7 +465,7 @@ process.out = cms.OutputModule("PoolOutputModule",
                                                                       'keep *_pfShyftTuple*_*_*',
                                                                       'keep *_pdfWeightProducer_*_*',
                                                                       'keep PileupSummaryInfos_*_*_*',
-                                                                      'keep *_goodOfflinePrimaryVertices_*_*'
+                                                                      'keep *_offlinePrimaryVertices_*_*'
                                                                       ) 
                                )
 process.outpath = cms.EndPath(process.out)
