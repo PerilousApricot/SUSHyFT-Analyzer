@@ -4,7 +4,7 @@
 #include "DataFormats/RecoCandidate/interface/IsoDeposit.h"
 #include "DataFormats/RecoCandidate/interface/IsoDepositVetos.h"
 #include "DataFormats/PatCandidates/interface/Isolation.h"
-#include "EGamma/EGammaAnalysisTools/interface/ElectronEffectiveArea.h"
+#include "EGammaAnalysis/ElectronTools/interface/ElectronEffectiveArea.h"
 #include "DataFormats/Common/interface/ValueMap.h"
 #include "DataFormats/ParticleFlowCandidate/interface/PFCandidateFwd.h"
 #include "DataFormats/ParticleFlowCandidate/interface/PFCandidate.h"
