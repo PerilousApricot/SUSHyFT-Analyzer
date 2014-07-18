@@ -11,7 +11,7 @@ Contact:        Sadia Khalil (skhalil@fnal.gov)
 #include "FWCore/Utilities/interface/InputTag.h"
 #include "FWCore/Common/interface/EventBase.h"
 #include "DataFormats/VertexReco/interface/Vertex.h"
-#include "EGammaAnalysis/ElectronTools/interface/ElectronEffectiveArea.h"
+#include "EgammaAnalysis/ElectronTools/interface/ElectronEffectiveArea.h"
 
 //Math
 #include "CLHEP/Units/GlobalPhysicalConstants.h"
