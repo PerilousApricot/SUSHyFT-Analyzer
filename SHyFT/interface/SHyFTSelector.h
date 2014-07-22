@@ -41,7 +41,7 @@ class SHyFTSelector : public EventSelector {
       std::vector<reco::ShallowClonePtrCandidate> const & selectedMuons     () const { return selectedMuons_;    }       
       reco::ShallowClonePtrCandidate const &              selectedMET       () const { return met_; }
       std::vector<reco::ShallowClonePtrCandidate> const & selectedElectrons () const { return selectedElectrons_; }
-      std::vector<reco::ShallowClonePtrCandidate> const & selectedTaus () const { return selectedTaus_; }
+      std::vector<edm::Ptr<pat::Tau> > const & selectedTaus () const { return selectedTaus_; }
 
       //std::vector<reco::ShallowClonePtrCandidate> const & selectedLooseElectrons() const { return selectedLooseElectrons_; }
       
@@ -86,8 +86,8 @@ class SHyFTSelector : public EventSelector {
       reco::ShallowClonePtrCandidate              met_;
       std::vector<reco::ShallowClonePtrCandidate> selectedLooseElectrons_;
       std::vector<reco::ShallowClonePtrCandidate> selectedLooseMuons_;
-      std::vector<reco::ShallowClonePtrCandidate> allTaus_;
-      std::vector<reco::ShallowClonePtrCandidate> selectedTaus_;
+      std::vector<edm::Ptr<pat::Tau> > allTaus_;
+      std::vector<edm::Ptr<pat::Tau> > selectedTaus_;
 
       PVSelector                           pvSelector_;
       PFMuonSelector                       muonIdTight_;

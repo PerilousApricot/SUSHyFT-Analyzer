@@ -101,7 +101,7 @@ def getParser(default=None):
 
     # JER systematics
     parser.add_option('--jetSmear', metavar='F', type='float', action='store',
-                      default=0.1 if default else None,
+                      default=0.0 if default else None,
                       dest='jetSmear',
                       help='JER smearing. Standard values are 0.1 (nominal), 0.0 (down), 0.2 (up)')
 
@@ -601,7 +601,7 @@ def runOnce(options, events):
     jetSecvtxMassHandle         = Handle( "std::vector<float>" )
     jetSecvtxMassLabel    = ( "pfShyftTupleJets" + lepStr +  postfix,   "secvtxMass" )
     jetSSVHEHandle         = Handle( "std::vector<float>" )
-    jetSSVHELabel    = ( "pfShyftTupleJets" + lepStr +  postfix,   "ssvhe" )
+    jetSSVHELabel    = ( "pfShyftTupleJets" + lepStr +  postfix,   "csvhe" )
     jetFlavorHandle         = Handle( "std::vector<float>" )
     jetFlavorLabel    = ( "pfShyftTupleJets" + lepStr +  postfix,   "flavor" )
     jetTauPtHandle         = Handle( "std::vector<float>" )
@@ -874,13 +874,13 @@ def runOnce(options, events):
         # Now get the Jets
         event.getByLabel( jetPtLabel, jetPtHandle )
         jetPts = jetPtHandle.product()
-        if not options.useData:
-            event.getByLabel( genJetPtLabel, genJetPtHandle )
-            if genJetPtHandle.isValid(): 
-                genJetPts = genJetPtHandle.product()
-            elif abs(options.jetSmear)>0.0001:
-                print "You want to use jetSmear but there is no genJetPt collection!!"
-                exit()
+        #if not options.useData:
+        #    event.getByLabel( genJetPtLabel, genJetPtHandle )
+        #    if genJetPtHandle.isValid(): 
+        #        genJetPts = genJetPtHandle.product()
+        #    elif abs(options.jetSmear)>0.0001:
+        #        print "You want to use jetSmear but there is no genJetPt collection!!"
+        #        exit()
         event.getByLabel( jetEtaLabel, jetEtaHandle )
         jetEtas = jetEtaHandle.product()
         event.getByLabel( jetPhiLabel, jetPhiHandle )

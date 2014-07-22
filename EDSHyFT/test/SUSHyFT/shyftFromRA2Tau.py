@@ -51,7 +51,7 @@ options.register('eleTriggerName',
                  "trigger to run for ele paths")
 
 options.register('muTriggerName',
-                 'HLT_IsoMu24*',
+                 'HLT_IsoMu24_eta2p1_v',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.string,
                  "trigger to run for muon paths")
@@ -87,34 +87,42 @@ print options
  ## Geometry and Detector Conditions (needed for a few patTuple production steps)
 process.load("Configuration.Geometry.GeometryIdeal_cff")
 process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_cff")
- 
+
+# Add MVA triggers
+process.load('EgammaAnalysis.ElectronTools.electronIdMVAProducer_cfi')
+process.mvaID = cms.Sequence(  process.mvaTrigV0 + process.mvaNonTrigV0 )
+
+# hopefully pulls in the proper pat trigger
+#process.load( "PhysicsTools.PatAlgos.patSequences_cff" )
+#from PhysicsTools.PatAlgos.patEventContent_cff import *
+
 inputCutsToIgnore = []
 useData = True
 if options.useData == 0 :
     useData = False
     #inputCutsToIgnore = ['Trigger']
     process.GlobalTag.globaltag = 'START53_V7F::All'
-    payloads = [                                                                   
-        'Jec12_V3_MC_L1FastJet_AK5PFchs.txt',                                      
-        'Jec12_V3_MC_L2Relative_AK5PFchs.txt',                                     
-        'Jec12_V3_MC_L3Absolute_AK5PFchs.txt',                                     
-        'Jec12_V3_MC_L2L3Residual_AK5PFchs.txt',                                   
-        'Jec12_V3_MC_Uncertainty_AK5PFchs.txt',                                    
-        ]   
+    payloads = [
+        'Jec12_V3_MC_L1FastJet_AK5PFchs.txt',
+        'Jec12_V3_MC_L2Relative_AK5PFchs.txt',
+        'Jec12_V3_MC_L3Absolute_AK5PFchs.txt',
+        'Jec12_V3_MC_L2L3Residual_AK5PFchs.txt',
+        'Jec12_V3_MC_Uncertainty_AK5PFchs.txt',
+        ]
 else:
     process.GlobalTag.globaltag = 'GR_P_V40_AN1::All'
-    payloads = [                                                                   
-        'Jec12_V3_L1FastJet_AK5PFchs.txt',                                         
-        'Jec12_V3_L2Relative_AK5PFchs.txt',                                        
-        'Jec12_V3_L3Absolute_AK5PFchs.txt',                                        
-        'Jec12_V3_L2L3Residual_AK5PFchs.txt',                                      
-        'Jec12_V3_Uncertainty_AK5PFchs.txt',                                       
-        ]     
+    payloads = [
+        'Jec12_V3_L1FastJet_AK5PFchs.txt',
+        'Jec12_V3_L2Relative_AK5PFchs.txt',
+        'Jec12_V3_L3Absolute_AK5PFchs.txt',
+        'Jec12_V3_L2L3Residual_AK5PFchs.txt',
+        'Jec12_V3_Uncertainty_AK5PFchs.txt',
+        ]
 
 # triggering's being done in the HLTfilter
-inputCutsToIgnore = ['Trigger']
+#inputCutsToIgnore = ['Trigger']
 # run the trigger on the fly
-process.load('PhysicsTools.PatAlgos.triggerLayer1.triggerProducer_cff')
+#process.load('PhysicsTools.PatAlgos.triggerLayer1.triggerProducer_cff')
 
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
@@ -127,6 +135,7 @@ if useData:
 
 else :
     inputFiles = [
+            '/store/user/flanagwh/TTJets_MassiveBinDECAY_TuneZ2star_8TeV-madgraph-tauola/5_3_11_patch6_Vandy/405381fe00d9112adafce059de4ce799/skimPat_688_3_e0l.root',
             '/store/user/flanagwh/TTJets_MassiveBinDECAY_TuneZ2star_8TeV-madgraph-tauola/5_3_11_patch6_Vandy/405381fe00d9112adafce059de4ce799/skimPat_100_2_05a.root'
             #'root://xrootd.unl.edu//store/user/lpctlbsm/meloam/GJets_HT-200To400_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3/99bd99199697666ff01397dad5652e9e/tlbsm_53x_v3_mc_425_1_CX2.root'
         ]
@@ -144,26 +153,8 @@ process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(2000) )
 
 from Analysis.SHyFT.shyftselection_cfi import wplusjetsAnalysis as shyftSelectionInput
 
-
-if options.usePDFs: 
+if options.usePDFs:
 	process.load('Analysis.PdfWeights.pdfWeightProducer_cfi')
-
-#____________________________________Trigger Filter________________________________________
-
-from HLTrigger.HLTfilters.hltHighLevel_cfi import *
-if options.ignoreTrigger:
-    process.hltSelectionMu = cms.Sequence()
-    process.hltSelectionEle = cms.Sequence()
-else :
-    process.hltSelectionMu = hltHighLevel.clone(TriggerResultsTag = 'TriggerResults::HLT', HLTPaths = ['HLT_IsoMu24_eta2p1_v*',
-                                                                                                       'HLT_Mu30',
-                                                                                                       ])
-    process.hltSelectionMuFAKE = hltHighLevel.clone(TriggerResultsTag = 'TriggerResults::HLT', HLTPaths = ['HLT_Mu40_eta2p1_v*','HLT_IsoMu24_eta2p1_v*'])
-    process.hltSelectionEle = hltHighLevel.clone(TriggerResultsTag = 'TriggerResults::HLT', HLTPaths =  ['HLT_Ele27_WP80_v*',
-                                                                                                         'HLT_PFMET_150_v*'
-                                                                                                         ])
-    process.hltSelectionMu.throw = False
-    process.hltSelectionEle.throw = False
 
 process.pfShyftProducerMu = cms.EDFilter('EDSHyFTSelector',
         shyftSelection = shyftSelectionInput.clone(
@@ -192,23 +183,9 @@ process.pfShyftProducerMu = cms.EDFilter('EDSHyFTSelector',
             ),
             matchByHand = cms.bool(False),
         )
-process.pfShyftProducerMetResMu090 = process.pfShyftProducerMu.clone(
-    shyftSelection = process.pfShyftProducerMu.shyftSelection.clone(
-    unclMetScale = cms.double( 0.90 ),
-    jetSmear = cms.double(0.01),
-    identifier = cms.string('PFMETRES090'),
-    )
-    )
 
-process.pfShyftProducerMetResMu110 = process.pfShyftProducerMu.clone(
-    shyftSelection = process.pfShyftProducerMu.shyftSelection.clone(
-    unclMetScale = cms.double( 1.10 ),
-    jetSmear = cms.double(0.01),
-    identifier = cms.string('PFMETRES110'),
-    )
-    )
 process.pfShyftTupleJetsMu = cms.EDProducer(
-    "CandViewNtpProducer", 
+    "CandViewNtpProducer",
     src = cms.InputTag("pfShyftProducerMu", "jets"),
     pvSrc   = cms.InputTag('offlinePrimaryVertices'),
     lazyParser = cms.untracked.bool(True),
@@ -231,7 +208,7 @@ process.pfShyftTupleJetsMu = cms.EDProducer(
             quantity = cms.untracked.string("phi")
             ),
         cms.PSet(
-            tag = cms.untracked.string("ssvhe"),
+            tag = cms.untracked.string("csvhe"),
             quantity = cms.untracked.string("bDiscriminator('combinedSecondaryVertexBJetTags')")
             ),
         cms.PSet(
@@ -282,7 +259,7 @@ process.pfShyftTupleJetsMu = cms.EDProducer(
             tag = cms.untracked.string("byTightIsolationMVA2"),
             quantity = cms.untracked.string("userFloat('byTightIsolationMVA2')")
             ),
-        )  
+        )
     )
 
 if not options.useData :
@@ -292,15 +269,9 @@ if not options.useData :
             quantity = cms.untracked.string("partonFlavour()")
             )
         )
-    process.pfShyftTupleJetsMu.variables.append(
-        cms.PSet(
-            tag = cms.untracked.string("genJetPt"),
-            quantity = cms.untracked.string("? userInt('matched') ? genJet().pt : -10")
-            )
-    )
 
 process.pfShyftTupleMuons = cms.EDProducer(
-    "CandViewNtpProducer", 
+    "CandViewNtpProducer",
     src = cms.InputTag("pfShyftProducerMu", "muons"),
     lazyParser = cms.untracked.bool(True),
     eventInfo = cms.untracked.bool(False),
@@ -324,11 +295,11 @@ process.pfShyftTupleMuons = cms.EDProducer(
                                             "userIsolation('pat::PfGammaIso')"
                                             )
             ),
-        )  
+        )
     )
 
 process.pfShyftTupleMETMu = cms.EDProducer(
-    "CandViewNtpProducer", 
+    "CandViewNtpProducer",
     src = cms.InputTag("pfShyftProducerMu", "MET"),
     lazyParser = cms.untracked.bool(True),
     eventInfo = cms.untracked.bool(False),
@@ -341,47 +312,13 @@ process.pfShyftTupleMETMu = cms.EDProducer(
             tag = cms.untracked.string("phi"),
             quantity = cms.untracked.string("phi")
             )
-        )  
+        )
     )
 
-process.pfShyftTupleMETMetResMu110 = process.pfShyftTupleMETMu.clone(
-    src = cms.InputTag("pfShyftProducerMetResMu110", "MET"),
-    )
 
-process.pfShyftTupleMETMetResMu090 = process.pfShyftTupleMETMu.clone(
-    src = cms.InputTag("pfShyftProducerMetResMu090", "MET"),
-    )
-
-#process.PUNtupleDumperSingleEle = cms.EDProducer("PileupReweightingPoducer",
-#                                         FirstTime = cms.untracked.bool(True),
-#                                         oneDReweighting = cms.untracked.bool(False),        
-#                                         PileupMCFile = cms.untracked.string('PUMC_dist_flat10.root'),
-#                                         PileupDataFile = cms.untracked.string('dataPileupTruth_v2_finebin_160404-167913.root')
-#)
-#
-#process.PUNtupleDumperEleHad = cms.EDProducer("PileupReweightingPoducer",
-#                                         FirstTime = cms.untracked.bool(True),
-#                                         oneDReweighting = cms.untracked.bool(False),        
-#                                         PileupMCFile = cms.untracked.string('PUMC_dist_flat10.root'),
-#                                         PileupDataFile = cms.untracked.string('dataPileupTruth_v2_finebin_170826-173692.root')
-#)
-#
-#process.PUNtupleDumperOld = cms.EDProducer("PUNtupleDumper",
-#                                           PUscenario = cms.string("42X")
-#                                           )
-
-#if not options.useData:
-    #process.p0 = cms.Path( process.PUNtupleDumperSingleEle + process.PUNtupleDumperEleHad + process.PUNtupleDumperOld )
-#    process.p0 = cms.Path( )
-#else:
-
-process.p0 = cms.Path( process.patTriggerDefaultSequence )
-    
 process.p1 = cms.Path()
-process.p2 = cms.Path()
 if options.runMuons:
     process.p1 = cms.Path(
-        process.hltSelectionMu*
         process.pfShyftProducerMu*
         process.pfShyftTupleJetsMu*
         process.pfShyftTupleMuons*
@@ -389,30 +326,12 @@ if options.runMuons:
         #process.pfShyftTupleTausMu
         )
 
-if options.usePDFs :
-    process.p1 += process.pdfWeightProducer
-    process.p2 += process.pdfWeightProducer
-
-process.p3 = cms.Path()
-process.p4 = cms.Path()
-process.p5 = cms.Path()
-process.p6 = cms.Path()
-
-if options.useMETRes and options.runMuons:
-    process.p6 = cms.Path(
-        process.hltSelectionMu*
-        process.pfShyftProducerMetResMu090*
-        process.pfShyftTupleMETMetResMu090*
-        process.pfShyftProducerMetResMu110*
-        process.pfShyftTupleMETMetResMu110
-        )
-
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 
 process.out = cms.OutputModule("PoolOutputModule",
                                fileName = cms.untracked.string("shyftDump2.root"),
-                               SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p1','p2','p3','p4', 'p5', 'p6') ),
+                               SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p1') ),
                                outputCommands = cms.untracked.vstring('drop *',
                                                                       #'keep *',
                                                                       #'keep *_*_pileupWeights_*',
@@ -426,7 +345,7 @@ process.out = cms.OutputModule("PoolOutputModule",
                                                                       'keep *_offlinePrimaryVertices_*_*',
                                                                       'keep *_patTriggerEvent_*_*',
                                                                       'keep patTriggerPaths_patTrigger_*_*'
-                                                                      ) 
+                                                                      )
                                )
 process.outpath = cms.EndPath(process.out)
 
