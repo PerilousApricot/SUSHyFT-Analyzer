@@ -25,6 +25,9 @@
 #include "PhysicsTools/SelectorUtils/interface/PFMuonSelector.h"
 #include "SimDataFormats/PileupSummaryInfo/interface/PileupSummaryInfo.h"
 
+#include <TFile.h>
+#include <TH1.h>
+
 class SHyFTSelector : public EventSelector {
     public:
         SHyFTSelector() {}
@@ -170,6 +173,11 @@ class SHyFTSelector : public EventSelector {
         std::vector<std::string> jecPayloads_;
         boost::shared_ptr<JetCorrectionUncertainty> jecUnc_;
         boost::shared_ptr<FactorizedJetCorrector> jec_;
+
+        TFile * puMCHistFile_;
+        TFile * puDataHistFile_;
+        TH1 * puMCHist_;
+        TH1 * puDataHist_;
 };
 
 

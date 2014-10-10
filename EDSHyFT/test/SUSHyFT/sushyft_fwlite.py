@@ -440,8 +440,8 @@ def runOnce(options, events):
 
     # std - single top discriminator
     # stdt - single top discriminator transverse
-    names = ['nPV', 'secvtxMass','lepEta','lepPt', 'centrality','sumEt', 'MET', 'wMT', 'hT', 'std', stdt']
-    titles = ['number of Primary Vertices','SecVtx Mass','Lepton #eta', 'Lepton pt', 'Centrality','#sum E_{T}','MET', 'M_{WT}', 'hT', "SingleTopDisc", "SingleTopDisc_{T}"]
+    names = ['nPV', 'secvtxMass','lepEta','lepPt', 'centrality','sumEt', 'MET', 'wMT', 'hT', 'std', 'stdt']
+    titles = ['number of Primary Vertices','SecVtx Mass','Lepton #eta', 'Lepton pt', 'Centrality','#sum E_{T}','MET', 'M_{WT}', 'hT', "SingleTopDisc", "SingleTopDiscT"]
     bounds = [ [25, -0.5, 24.5],
                [40,0.,10.],
                [30,0.,3.0],
@@ -1032,29 +1032,6 @@ def runOnce(options, events):
             for idir in dirlist:
                 nJets3[idir].Fill(njets, PUweight)
 
-        # possibly not needed?
-        if False and not options.useData and options.useEleHad and njets > 2:
-            # BELOW IS DISABLED
-            if jets[2].Pt() >= 35.0 and jets[2].Pt() < 37.5:
-                PUweight = PUweight * 0.87
-            elif jets[2].Pt() >=37.5 and jets[2].Pt() < 40.0:          
-                PUweight = PUweight * 0.92
-            elif jets[2].Pt() >= 40.0 and jets[2].Pt() < 45.0:          
-                PUweight = PUweight * 0.94                      
-            elif jets[2].Pt() >= 45.0 and jets[2].Pt() < 50.0:          
-                PUweight = PUweight * 0.96                       
-            elif jets[2].Pt() >= 50.0 and jets[2].Pt() < 55.0:          
-                PUweight = PUweight * 0.99            
-            elif jets[2].Pt() >= 55.0 and jets[2].Pt() < 60.0:          
-                PUweight = PUweight * 1.0
-            elif jets[2].Pt() >= 60.0 and jets[2].Pt() < 65.0:          
-                PUweight = PUweight * 0.98
-            elif jets[2].Pt() >= 65.0 and jets[2].Pt() < 70.0:          
-                PUweight = PUweight * 0.99    
-            elif jets[2].Pt() >= 70:
-                PUweight = PUweight * 1.0 
-                 
-
         #print 'PUweight after----------', PUweight        
         ##variables to be filled:
         ##_____________________
@@ -1074,11 +1051,13 @@ def runOnce(options, events):
             lepPt  = muonPts[0]
             lepPhi = muonPhis[0]
             lepPFIso = muonPfisos[0]/lepPt
+            lepMass = 105.6583715 / 1000.0 # 105MeV
         else:
             lepEta = electronEtas[0]
             lepPt  = electronPts[0]
             lepPhi = electronPhis[0]        
             lepPFIso = electronPfisos[0]/lepPt
+            lepMass = 0.511 / 1000.0 # 0.511MeV
             #print 'lepPFIso = ', lepPFIso, 'lep Pt = ', lepPt, 'iso = ', electronPfisos[0]
         for idir in dirlist:
             elePt[idir].Fill( lepPt, PUweight )
@@ -1225,6 +1204,30 @@ def runOnce(options, events):
                 else:
                     effs.append( EffInfo(ijet, 0.0, iflavor) )
 
+        singleTopDiscriminatorT = -1
+        singleTopDiscriminator  = -1
+        if nbtags >= 1:
+            # find the leading b tag
+            leadingBPt = 0
+            leadingBJet = None
+            for jet in btaggedJets:
+                if jet.Pt() > leadingBPt:
+                    leadingBPt = jet.Pt()
+                    leadingBJet = jet
+
+            lepVector = ROOT.TLorentzVector()
+            lepVector.SetPtEtaPhiM(lepPt,
+                                   lepEta,
+                                   lepPhi,
+                                   lepMass)
+            metVector = ROOT.TLorentzVector()
+            metVector.SetPtEtaPhiM(metRaw,
+                                   0,
+                                   metPhiRaw,
+                                   0)
+            singleTopDiscriminatorT = (jet + lepVector + metVector).Mt()
+            singleTopDiscriminator  = (jet + lepVector + metVector).M()
+
         if numB > 0:
             flavorIndex = 0
         elif numC > 0:
@@ -1323,18 +1326,23 @@ def runOnce(options, events):
                 METPlots[njets][nbtags][3][idir].Fill( met, PUweight )
                 wMTPlots[njets][nbtags][3][idir].Fill( wMT, PUweight )
                 hTPlots[njets][nbtags][3][idir].Fill( hT, PUweight )
+                stdPlots[njets][nbtags][3][idir].Fill( singleTopDiscriminator, PUweight )
+                stdtPlots[njets][nbtags][3][idir].Fill( singleTopDiscriminatorT, PUweight )
 
                 if nbtags > 0:
                     secvtxMassPlotsTau[njets][nbtags][nttags][3][idir].Fill( secvtxMass, PUweight )
                 nPVPlotsTau[njets][nbtags][nttags][3][idir].Fill( vertices.size(), PUweight )
                 lepEtaPlotsTau[njets][nbtags][nttags][3][idir].Fill( lepEta, PUweight )
                 lepPtPlotsTau[njets][nbtags][nttags][3][idir].Fill( lepPt, PUweight )
-                centralityPlotsTau[njets][nttags][nbtags][3][idir].Fill( sumEt / sumE, PUweight )
+                centralityPlotsTau[njets][nbtags][nttags][3][idir].Fill( sumEt / sumE, PUweight )
                 sumEtPlotsTau[njets][nbtags][nttags][3][idir].Fill( sumEt, PUweight )
                 #jet1PtPlots[njets][nbtags][3][idir].Fill( jet1Pt, PUweight )
                 METPlotsTau[njets][nbtags][nttags][3][idir].Fill( met, PUweight )
                 wMTPlotsTau[njets][nbtags][nttags][3][idir].Fill( wMT, PUweight )
                 hTPlotsTau[njets][nbtags][nttags][3][idir].Fill( hT, PUweight )
+                stdPlotsTau[njets][nbtags][nttags][3][idir].Fill( singleTopDiscriminator, PUweight )
+                stdtPlotsTau[njets][nbtags][nttags][3][idir].Fill( singleTopDiscriminatorT, PUweight )
+
 
 
                 if flavorIndex >= 0:
@@ -1349,6 +1357,9 @@ def runOnce(options, events):
                     METPlots[njets][nbtags][flavorIndex][idir].Fill( met, PUweight )
                     wMTPlots[njets][nbtags][flavorIndex][idir].Fill( wMT, PUweight )
                     hTPlots[njets][nbtags][flavorIndex][idir].Fill( hT, PUweight )
+                    stdPlots[njets][nbtags][flavorIndex][idir].Fill( singleTopDiscriminator, PUweight )
+                    stdtPlots[njets][nbtags][flavorIndex][idir].Fill( singleTopDiscriminatorT, PUweight )
+
 
                 if flavorIndex >= 0:
                     if nbtags > 0:
@@ -1362,6 +1373,9 @@ def runOnce(options, events):
                     METPlotsTau[njets][nbtags][nttags][flavorIndex][idir].Fill( met, PUweight )
                     wMTPlotsTau[njets][nbtags][nttags][flavorIndex][idir].Fill( wMT, PUweight )
                     hTPlotsTau[njets][nbtags][nttags][flavorIndex][idir].Fill( hT, PUweight )
+                    stdPlotsTau[njets][nbtags][nttags][flavorIndex][idir].Fill( singleTopDiscriminator, PUweight )
+                    stdtPlotsTau[njets][nbtags][nttags][flavorIndex][idir].Fill( singleTopDiscriminatorT, PUweight )
+
 
         else:
 
@@ -1390,6 +1404,9 @@ def runOnce(options, events):
                     METPlots[njets][jtag][3][idir].Fill( met, pTag )
                     wMTPlots[njets][jtag][3][idir].Fill( wMT, pTag )
                     hTPlots[njets][jtag][3][idir].Fill( hT, pTag )
+                    stdPlots[njets][jtag][3][idir].Fill( singleTopDiscriminator, pTag )
+                    stdtPlots[njets][jtag][3][idir].Fill( singleTopDiscriminatorT, pTag )
+
 
                     # for tau histograms
                     if jtag > 0:
@@ -1403,6 +1420,9 @@ def runOnce(options, events):
                     METPlotsTau[njets][jtag][nttags][3][idir].Fill( met, pTag )
                     wMTPlotsTau[njets][jtag][nttags][3][idir].Fill( wMT, pTag )
                     hTPlotsTau[njets][jtag][nttags][3][idir].Fill( hT, pTag )
+                    stdPlotsTau[njets][jtag][nttags][3][idir].Fill( singleTopDiscriminator, pTag )
+                    stdtPlotsTau[njets][jtag][nttags][3][idir].Fill( singleTopDiscriminatorT, pTag )
+
 
                     if flavorIndex >= 0:
                         if jtag > 0:
@@ -1416,6 +1436,9 @@ def runOnce(options, events):
                         METPlots[njets][jtag][flavorIndex][idir].Fill( met, pTag )
                         wMTPlots[njets][jtag][flavorIndex][idir].Fill( wMT, pTag )
                         hTPlots[njets][jtag][flavorIndex][idir].Fill( hT, pTag )
+                        stdPlots[njets][jtag][flavorIndex][idir].Fill( singleTopDiscriminator, pTag )
+                        stdtPlots[njets][jtag][flavorIndex][idir].Fill( singleTopDiscriminatorT, pTag )
+
 
                         if jtag > 0:
                             secvtxMassPlotsTau[njets][jtag][nttags][flavorIndex][idir].Fill( secvtxMass, pTag ) # Fill each jet flavor individually
@@ -1428,6 +1451,8 @@ def runOnce(options, events):
                         METPlotsTau[njets][jtag][nttags][flavorIndex][idir].Fill( met, pTag )
                         wMTPlotsTau[njets][jtag][nttags][flavorIndex][idir].Fill( wMT, pTag )
                         hTPlotsTau[njets][jtag][nttags][flavorIndex][idir].Fill( hT, pTag )
+                        stdPlotsTau[njets][jtag][nttags][flavorIndex][idir].Fill( singleTopDiscriminator, pTag )
+                        stdtPlotsTau[njets][jtag][nttags][flavorIndex][idir].Fill( singleTopDiscriminatorT, pTag )
 
 
         # this yield passes control back up out of the coroutine

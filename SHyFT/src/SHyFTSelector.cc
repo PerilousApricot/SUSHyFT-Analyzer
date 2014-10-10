@@ -20,21 +20,18 @@ typedef math::XYZPoint Point;
 
 SHyFTSelector::SHyFTSelector( edm::ParameterSet const & params ) :
     EventSelector(),
-    muonTag_         (params.getParameter<edm::InputTag>("muonSrc") ),
-    electronTag_     (params.getParameter<edm::InputTag>("electronSrc") ),
-    jetTag_          (params.getParameter<edm::InputTag>("jetSrc") ),
-    metTag_          (params.getParameter<edm::InputTag>("metSrc") ),
-    rhoTag_          (params.getParameter<edm::InputTag>("rhoSrc") ),
-    rhoIsoTag_       (params.getParameter<edm::InputTag>("rhoIsoSrc") ),
-    trigTag_         (params.getParameter<edm::InputTag>("trigSrc") ),
-    tauTag_          (params.getParameter<edm::InputTag>("tauSrc") ),
+    muonTag_         (params.getParameter<edm::InputTag>("muonSrc")),
+    electronTag_     (params.getParameter<edm::InputTag>("electronSrc")),
+    jetTag_          (params.getParameter<edm::InputTag>("jetSrc")),
+    metTag_          (params.getParameter<edm::InputTag>("metSrc")),
+    rhoTag_          (params.getParameter<edm::InputTag>("rhoSrc")),
+    rhoIsoTag_       (params.getParameter<edm::InputTag>("rhoIsoSrc")),
+    trigTag_         (params.getParameter<edm::InputTag>("trigSrc")),
+    tauTag_          (params.getParameter<edm::InputTag>("tauSrc")),
     muTrig_          (params.getParameter<std::string>("muTrig")),
     eleTrig_         (params.getParameter<std::string>("eleTrig")),
     pvSelector_      (params.getParameter<edm::ParameterSet>("pvSelector") ),
-    //muonIdTight_     (params.getParameter<edm::ParameterSet>("muonIdTight") ),
-    //muonIdLoose_     (params.getParameter<edm::ParameterSet>("muonIdLoose") ),
     electronIdVeto_  (params.getParameter<edm::ParameterSet>("electronIdVeto") ),
-    //electronIdTight_ (params.getParameter<edm::ParameterSet>("electronIdTight") ),
     minJets_         (params.getParameter<int> ("minJets") ),
     muJetDR_         (params.getParameter<double>("muJetDR")),
     eleJetDR_        (params.getParameter<double>("eleJetDR")),
@@ -65,8 +62,10 @@ SHyFTSelector::SHyFTSelector( edm::ParameterSet const & params ) :
     useData_         (params.getParameter<bool>("useData")),
     useNoPFIso_      (params.getParameter<bool>("useNoPFIso")),
     useNoID_         (params.getParameter<bool>("useNoID")),
-    pfEleSrc_       (params.getParameter<edm::InputTag>( "pfEleSrc" )),
-    jecPayloads_     (params.getParameter<std::vector<std::string> >("jecPayloads"))
+    pfEleSrc_        (params.getParameter<edm::InputTag>( "pfEleSrc" )),
+    jecPayloads_     (params.getParameter<std::vector<std::string> >("jecPayloads")),
+    puMCFileName_    (params.getParameter<std::string>("puMCFileName")),
+    puDataFileName_  (params.getParameter<std::string>("puDataFileName"))
 {
    electronIdVeto_.setUseData(useData_);
 
@@ -154,6 +153,18 @@ SHyFTSelector::SHyFTSelector( edm::ParameterSet const & params ) :
     jec_ = boost::shared_ptr<FactorizedJetCorrector> ( new FactorizedJetCorrector(vPar) );
     jecUnc_ = boost::shared_ptr<JetCorrectionUncertainty>( new JetCorrectionUncertainty(jecPayloads_.back()));
     firstTime_ = true;
+    // the names of data and MC root files containing the PU distributions for 2012 data and S10 MC.
+    // These root files will be used to calculate the weights as Ndata(pu) / Nmc(pu)
+    if (!useData_) {
+        puMCHistFile_ = new TFile(puMCFileName_.c_str());
+        puDataHistFile_ = new TFile(puDataFileName_.c_str());
+        puMCHist_ = dynamic_cast<TH1*>(puMCHistFile_->Get("analyzeHiMassTau/NVertices_0"));
+        puDataHist_ = dynamic_cast<TH1*>(puDataHistFile_->Get("analyzeHiMassTau/NVertices_0"));
+        if (!puMCHist_ || !puDataHist_) {
+            throw std::runtime_error("failed to extract histogram for pileup");
+        }
+
+    }
 
     // Attempt to split the trigger into a list of triggers
     boost::algorithm::split(eleTriggerList_, eleTrig_, boost::algorithm::is_any_of(","));
@@ -298,7 +309,7 @@ bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & 
                 else passIso = relIso < eRelIso_;
 
                 if(useNoID_) passMVAID = 1;
-                else passMVAID = ielectron->electronID("eidLoose") > 0;
+                else passMVAID = ielectron->electronID("eidTight") > 0;
 
                 passVetoID = electronIdVeto_(*ielectron,event);//WP:"Veto" from cut based ID
 
@@ -607,8 +618,8 @@ bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & 
                         );
 
                     bool oneMuonMuVeto =
-                        ( selectedMuons_.size() == 1 &&
-                          looseMuons_.size() == 0
+                        ( selectedMuons_.size() >= 1 &&
+                          selectedLooseElectrons_.size() == 0
                         );
                     bool oneElectronMuVeto =
                         ( selectedElectrons_.size() == 1 &&
@@ -675,7 +686,7 @@ bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & 
                                     } // end if >=7 tight jets
 
                                     if ( ignoreCut(jet8Index_) ||
-                                            static_cast<int>(cleanedJets_.size()) >=  8 ){
+                                            static_cast<int>(cleanedJets_.size()) >=  9 ){
                                         passCut(ret,jet8Index_);
                                     } // end if >=8 tight jets
 
@@ -699,8 +710,32 @@ bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & 
         }// end if PV
 
     } // end if trigger
-
-
+    
+    // add pileup information
+    if ((bool)ret && ! useData_) {
+        // grab the collection with the pileup information
+        edm::Handle<std::vector< PileupSummaryInfo > > puInfo_;
+        event.getByLabel(edm::InputTag("addPileupInfo","",""), puInfo_);
+        std::vector<PileupSummaryInfo>::const_iterator PVI;
+        float ntruePUInt = -1;
+        for (PVI = puInfo_->begin(); PVI != puInfo_->end(); ++PVI) {
+            int BX = PVI->getBunchCrossing();
+            if (BX == 0) {
+                ntruePUInt = (PVI->getTrueNumInteractions());
+                continue;
+            }
+        }
+        int nVertices = (int) ntruePUInt;
+        int mcBin = puMCHist_->GetBin(nVertices+1);
+        int dataBin = puDataHist_->GetBin(nVertices+1);
+        double mcIntegral = puMCHist_->Integral();
+        double dataIntegral = puDataHist_->Integral();
+        double mcVal = puMCHist_->GetBinContent(mcBin);
+        double dataVal = puDataHist_->GetBinContent(dataBin);
+        float puWeight_ = (dataVal * mcIntegral) / (mcVal * dataIntegral);
+    } else {
+        float puWeight_ = 1.0;
+    }
     setIgnored(ret);
     return (bool)ret;
 }

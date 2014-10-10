@@ -19,6 +19,7 @@ class EDSHyFTSelector : public edm::FilterWrapper<SHyFTSelector> {
       produces< std::vector<pat::Muon> >     ("muons");
       produces< std::vector<pat::Electron> > ("electrons");
       produces< std::vector<pat::Tau> >  ("taus");
+      produces<float>("pileUp");
     };
      
   virtual ~EDSHyFTSelector() {}

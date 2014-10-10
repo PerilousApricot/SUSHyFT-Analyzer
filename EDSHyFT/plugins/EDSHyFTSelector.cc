@@ -34,6 +34,9 @@ bool EDSHyFTSelector::filter( edm::Event & event, const edm::EventSetup& eventSe
     for ( clone_iter ibegin = ijets.begin(), iend = ijets.end(), i = ibegin;i != iend; ++i ) {
         pat::Jet const * ijet = dynamic_cast<pat::Jet const *>( i->masterClonePtr().get() );
         jets->push_back( *ijet );
+        if (ijet->hasTagInfo("secondaryVertexTagInfos") && ijet->tagInfoSecondaryVertex("secondaryVertexTagInfos")->nVertices() > 0) {
+            jets->back().addUserFloat("secvtxMass",ijet->tagInfoSecondaryVertex("secondaryVertexTagInfos")->secondaryVertex(0).p4().mass());
+        }
         if ( ijet != 0 ) {
             // match jet object with a (potential) Tau matching it
             for ( tau_iter jbegin = itaus.begin(), jend = itaus.end(), j = jbegin; j != jend; ++j ) {
@@ -50,13 +53,6 @@ bool EDSHyFTSelector::filter( edm::Event & event, const edm::EventSetup& eventSe
                     jets->back().addUserFloat("byLooseCombinedIsolationDeltaBetaCorr3Hits", jtau->tauID("byLooseCombinedIsolationDeltaBetaCorr3Hits") );
                     jets->back().addUserInt("byMediumCombinedIsolationDeltaBetaCorr3Hits", jtau->tauID("byMediumCombinedIsolationDeltaBetaCorr3Hits"));
                     jets->back().addUserInt("byTightCombinedIsolationDeltaBetaCorr3Hits", jtau->tauID("byTightCombinedIsolationDeltaBetaCorr3Hits"));
-                    //cerr << "butt8\n";
-                    //jets->back().addUserInt("byLooseIsolationMVA2", jtau->tauID("byLooseIsolationMVA2"));
-                    //cerr << "butt9\n";
-                    //jets->back().addUserInt("byMediumIsolationMVA2", jtau->tauID("byMediumIsolationMVA2"));
-                    //cerr << "buttA\n";
-                    //jets->back().addUserInt("byTightIsolationMVA2", jtau->tauID("byTightIsolationMVA2"));
-                    //cerr << "buttB\n";
                 }
             }
         }
@@ -79,12 +75,14 @@ bool EDSHyFTSelector::filter( edm::Event & event, const edm::EventSetup& eventSe
         if ( jtau != 0)
             taus->push_back( *jtau );
     }
-
+    std::auto_ptr<float> puWeightPointer(new float);
+    (*puWeightPointer) = filter_->puWeight();
     event.put( jets, "jets");
     event.put( mets, "MET");
     event.put( muons, "muons");
     event.put( electrons, "electrons");
     event.put( taus, "taus" );
+    event.put( puWeightPointer , "pileUp" );
     return passed; 
 }
 

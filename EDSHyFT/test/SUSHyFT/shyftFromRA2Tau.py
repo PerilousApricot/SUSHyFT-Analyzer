@@ -96,7 +96,7 @@ process.mvaID = cms.Sequence(  process.mvaTrigV0 + process.mvaNonTrigV0 )
 #process.load( "PhysicsTools.PatAlgos.patSequences_cff" )
 #from PhysicsTools.PatAlgos.patEventContent_cff import *
 
-inputCutsToIgnore = []
+inputCutsToIgnore = ["== 1 Tight Lepton","== 1 Lepton","Dilepton Veto"]
 useData = True
 if options.useData == 0 :
     useData = False
@@ -179,11 +179,13 @@ process.pfShyftProducerMu = cms.EDFilter('EDSHyFTSelector',
             cutsToIgnore=cms.vstring( inputCutsToIgnore ),
             useData = cms.bool(useData),
             jetSmear = cms.double(0.0),
-            jecPayloads = cms.vstring( payloads )
+            jecPayloads = cms.vstring( payloads ),
+            puDataFileName = cms.string("DataPUFile_Full2012.root"),
+            puMCFileName = cms.string("S10MC_PUFile.root"),
             ),
             matchByHand = cms.bool(False),
         )
-
+#process.pfShyftProducerMu.userData.userFunctionLabels = cms.vstring('secvtxMass')
 process.pfShyftTupleJetsMu = cms.EDProducer(
     "CandViewNtpProducer",
     src = cms.InputTag("pfShyftProducerMu", "jets"),
@@ -330,7 +332,7 @@ process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
 
 process.out = cms.OutputModule("PoolOutputModule",
-                               fileName = cms.untracked.string("shyftDump2.root"),
+                               fileName = cms.untracked.string("shyft_edntuple.root"),
                                SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p1') ),
                                outputCommands = cms.untracked.vstring('drop *',
                                                                       #'keep *',
@@ -338,6 +340,7 @@ process.out = cms.OutputModule("PoolOutputModule",
                                                                       #'keep *_PUNtupleDumperSingleEle_*_*',
                                                                       #'keep *_PUNtupleDumperEleHad_*_*',
                                                                       #'keep *_PUNtupleDumperOld_*_*',
+                                                                      'keep *_*_pileUp_*',
                                                                       'keep *_addPileupInfo_*_*',
                                                                       'keep *_pfShyftTuple*_*_*',
                                                                       'keep *_pdfWeightProducer_*_*',
