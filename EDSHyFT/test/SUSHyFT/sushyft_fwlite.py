@@ -216,7 +216,7 @@ argv = []
 import sys
 import DataFormats.FWLite
 from DataFormats.FWLite import Events, Handle
-
+import DataFormats.Math
 from Analysis.SHyFTScripts.combinations import *
 
 ROOT.gSystem.Load('libCondFormatsJetMETObjects')
@@ -386,6 +386,7 @@ def runOnce(options, events):
     hTPlots = []
     stdPlots = []
     stdtPlots = []
+    wRPlots = []
 
     # Plots split 3 ways (jet, btag, tautag) for SUSY
     nPVPlotsTau = []
@@ -400,6 +401,7 @@ def runOnce(options, events):
     hTPlotsTau = []
     stdPlotsTau = []
     stdtPlotsTau = []
+    wRPlotsTau = []
 
     # TODO - add tau-specific plots to this script
     tauPtPlots = []
@@ -421,6 +423,7 @@ def runOnce(options, events):
         hTPlots,
         stdPlots,
         stdtPlots,
+        wRPlots,
         ]
 
     allVarPlotsWithTaus = [
@@ -436,12 +439,13 @@ def runOnce(options, events):
         hTPlotsTau,
         stdPlotsTau,
         stdtPlotsTau,
+        wRPlotsTau,
         ]
 
     # std - single top discriminator
     # stdt - single top discriminator transverse
-    names = ['nPV', 'secvtxMass','lepEta','lepPt', 'centrality','sumEt', 'MET', 'wMT', 'hT', 'std', 'stdt']
-    titles = ['number of Primary Vertices','SecVtx Mass','Lepton #eta', 'Lepton pt', 'Centrality','#sum E_{T}','MET', 'M_{WT}', 'hT', "SingleTopDisc", "SingleTopDiscT"]
+    names = ['nPV', 'secvtxMass','lepEta','lepPt', 'centrality','sumEt', 'MET', 'wMT', 'hT', 'std', 'stdt','wrp']
+    titles = ['number of Primary Vertices','SecVtx Mass','Lepton #eta', 'Lepton pt', 'Centrality','#sum E_{T}','MET', 'M_{WT}', 'hT', "SingleTopDisc", "SingleTopDiscT",'wJetR']
     bounds = [ [25, -0.5, 24.5],
                [40,0.,10.],
                [30,0.,3.0],
@@ -453,7 +457,9 @@ def runOnce(options, events):
                [120,0.,1200.],
                [120,0.,300.],
                [120,0.,300.],
-               ]
+               [120,0.,300.],
+               [120,0.,300.],
+            ]
 
     mbb = []
     dRbb = []
@@ -1214,6 +1220,15 @@ def runOnce(options, events):
                 if jet.Pt() > leadingBPt:
                     leadingBPt = jet.Pt()
                     leadingBJet = jet
+            # find the leading non-btag
+            leadingLightJet = None
+            leadingLightPt = 0
+            for jet in jets:
+                if jet == leadingBJet:
+                    continue
+                if jet.Pt() > leadingLightPt:
+                    leadingLightPt = Pt()
+                    leadingLightJet = jet
 
             lepVector = ROOT.TLorentzVector()
             lepVector.SetPtEtaPhiM(lepPt,
@@ -1225,9 +1240,14 @@ def runOnce(options, events):
                                    0,
                                    metPhiRaw,
                                    0)
-            singleTopDiscriminatorT = (jet + lepVector + metVector).Mt()
-            singleTopDiscriminator  = (jet + lepVector + metVector).M()
-
+            singleTopDiscriminatorT = (leadingBJet + lepVector + metVector).Mt()
+            singleTopDiscriminator  = (leadingBJet + lepVector + metVector).M()
+            wRLeadingVector = leadingBJet + lepVector + metVector
+            wRTrailingVector = leadingLightJet
+            # TMath::Abs(normalizedPhi(v1.phi()-v2.phi()))
+            deltaPhi = wRLeadingVector.Phi() - wRTrailingVector.Phi()
+            wRDiscriminator = abs(DataFormats.Math.normalizedPhi(deltaPhi))
+        
         if numB > 0:
             flavorIndex = 0
         elif numC > 0:
@@ -1328,6 +1348,7 @@ def runOnce(options, events):
                 hTPlots[njets][nbtags][3][idir].Fill( hT, PUweight )
                 stdPlots[njets][nbtags][3][idir].Fill( singleTopDiscriminator, PUweight )
                 stdtPlots[njets][nbtags][3][idir].Fill( singleTopDiscriminatorT, PUweight )
+                wRPlots[njets][nbtags][3][idir].Fill( wRDiscriminator, PUweight )
 
                 if nbtags > 0:
                     secvtxMassPlotsTau[njets][nbtags][nttags][3][idir].Fill( secvtxMass, PUweight )
@@ -1342,6 +1363,7 @@ def runOnce(options, events):
                 hTPlotsTau[njets][nbtags][nttags][3][idir].Fill( hT, PUweight )
                 stdPlotsTau[njets][nbtags][nttags][3][idir].Fill( singleTopDiscriminator, PUweight )
                 stdtPlotsTau[njets][nbtags][nttags][3][idir].Fill( singleTopDiscriminatorT, PUweight )
+                wRPlotsTau[njets][nbtags][nttags][3][idir].Fill( wRDiscriminator, PUweight )
 
 
 
@@ -1359,6 +1381,7 @@ def runOnce(options, events):
                     hTPlots[njets][nbtags][flavorIndex][idir].Fill( hT, PUweight )
                     stdPlots[njets][nbtags][flavorIndex][idir].Fill( singleTopDiscriminator, PUweight )
                     stdtPlots[njets][nbtags][flavorIndex][idir].Fill( singleTopDiscriminatorT, PUweight )
+                    wRPlots[njets][nbtags][flavorIndex][idir].Fill( wRDiscriminator, PUweight )
 
 
                 if flavorIndex >= 0:
@@ -1375,6 +1398,7 @@ def runOnce(options, events):
                     hTPlotsTau[njets][nbtags][nttags][flavorIndex][idir].Fill( hT, PUweight )
                     stdPlotsTau[njets][nbtags][nttags][flavorIndex][idir].Fill( singleTopDiscriminator, PUweight )
                     stdtPlotsTau[njets][nbtags][nttags][flavorIndex][idir].Fill( singleTopDiscriminatorT, PUweight )
+                    wRPlotsTau[njets][nbtags][nttags][flavorIndex][idir].Fill( wRDiscriminator, PUweight )
 
 
         else:
@@ -1406,6 +1430,7 @@ def runOnce(options, events):
                     hTPlots[njets][jtag][3][idir].Fill( hT, pTag )
                     stdPlots[njets][jtag][3][idir].Fill( singleTopDiscriminator, pTag )
                     stdtPlots[njets][jtag][3][idir].Fill( singleTopDiscriminatorT, pTag )
+                    wRPlots[njets][jtag][3][idir].Fill( wRDiscriminator, pTag )
 
 
                     # for tau histograms
@@ -1422,6 +1447,7 @@ def runOnce(options, events):
                     hTPlotsTau[njets][jtag][nttags][3][idir].Fill( hT, pTag )
                     stdPlotsTau[njets][jtag][nttags][3][idir].Fill( singleTopDiscriminator, pTag )
                     stdtPlotsTau[njets][jtag][nttags][3][idir].Fill( singleTopDiscriminatorT, pTag )
+                    wRPlotsTau[njets][jtag][nttags][3][idir].Fill( wRDiscriminator, pTag )
 
 
                     if flavorIndex >= 0:
@@ -1438,6 +1464,7 @@ def runOnce(options, events):
                         hTPlots[njets][jtag][flavorIndex][idir].Fill( hT, pTag )
                         stdPlots[njets][jtag][flavorIndex][idir].Fill( singleTopDiscriminator, pTag )
                         stdtPlots[njets][jtag][flavorIndex][idir].Fill( singleTopDiscriminatorT, pTag )
+                        wRPlots[njets][jtag][flavorIndex][idir].Fill( wRDiscriminator, pTag )
 
 
                         if jtag > 0:
@@ -1453,6 +1480,7 @@ def runOnce(options, events):
                         hTPlotsTau[njets][jtag][nttags][flavorIndex][idir].Fill( hT, pTag )
                         stdPlotsTau[njets][jtag][nttags][flavorIndex][idir].Fill( singleTopDiscriminator, pTag )
                         stdtPlotsTau[njets][jtag][nttags][flavorIndex][idir].Fill( singleTopDiscriminatorT, pTag )
+                        wRPlotsTau[njets][jtag][nttags][flavorIndex][idir].Fill( wRDiscriminator, pTag )
 
 
         # this yield passes control back up out of the coroutine
