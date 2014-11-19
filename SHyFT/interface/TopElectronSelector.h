@@ -14,7 +14,7 @@ Contact:        Sadia Khalil (skhalil@fnal.gov)
 #include "EgammaAnalysis/ElectronTools/interface/ElectronEffectiveArea.h"
 
 //Math
-#include "CLHEP/Units/GlobalPhysicalConstants.h"
+//#include "CLHEP/Units/GlobalPhysicalConstants.h"
 typedef math::XYZPoint Point;
 
 class TopElectronSelector : public Selector<pat::Electron>  {

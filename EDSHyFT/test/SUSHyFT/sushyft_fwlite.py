@@ -216,8 +216,19 @@ argv = []
 import sys
 import DataFormats.FWLite
 from DataFormats.FWLite import Events, Handle
-import DataFormats.Math
+import pprint
 from Analysis.SHyFTScripts.combinations import *
+
+
+# helper function from c++
+def normalizedPhi(phi):
+    M_PI = 3.14159265358979323846
+    TWO_PI = M_PI * 2
+    while ( phi < -M_PI ):
+        phi += TWO_PI
+    while ( phi >  M_PI ):
+        phi -= TWO_PI
+    return phi;
 
 ROOT.gSystem.Load('libCondFormatsJetMETObjects')
 
@@ -455,10 +466,9 @@ def runOnce(options, events):
                [120,0.,300.],
                [120,0.,300.],
                [120,0.,1200.],
-               [120,0.,300.],
-               [120,0.,300.],
-               [120,0.,300.],
-               [120,0.,300.],
+               [240,0.,600.],
+               [240,0.,600.],
+               [165,0,3.3],
             ]
 
     mbb = []
@@ -1212,6 +1222,7 @@ def runOnce(options, events):
 
         singleTopDiscriminatorT = -1
         singleTopDiscriminator  = -1
+        wRDiscriminator = -1
         if nbtags >= 1:
             # find the leading b tag
             leadingBPt = 0
@@ -1227,7 +1238,7 @@ def runOnce(options, events):
                 if jet == leadingBJet:
                     continue
                 if jet.Pt() > leadingLightPt:
-                    leadingLightPt = Pt()
+                    leadingLightPt = jet.Pt()
                     leadingLightJet = jet
 
             lepVector = ROOT.TLorentzVector()
@@ -1246,7 +1257,7 @@ def runOnce(options, events):
             wRTrailingVector = leadingLightJet
             # TMath::Abs(normalizedPhi(v1.phi()-v2.phi()))
             deltaPhi = wRLeadingVector.Phi() - wRTrailingVector.Phi()
-            wRDiscriminator = abs(DataFormats.Math.normalizedPhi(deltaPhi))
+            wRDiscriminator = abs(normalizedPhi(deltaPhi))
         
         if numB > 0:
             flavorIndex = 0

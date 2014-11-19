@@ -29,7 +29,6 @@ bool EDSHyFTSelector::filter( edm::Event & event, const edm::EventSetup& eventSe
 
     typedef std::vector<reco::ShallowClonePtrCandidate>::const_iterator clone_iter;
     typedef std::vector<edm::Ptr<pat::Tau> >::const_iterator tau_iter;
-    bool isRealData = ( ! ( !event.isRealData()) );
 
     for ( clone_iter ibegin = ijets.begin(), iend = ijets.end(), i = ibegin;i != iend; ++i ) {
         pat::Jet const * ijet = dynamic_cast<pat::Jet const *>( i->masterClonePtr().get() );

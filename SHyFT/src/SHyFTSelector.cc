@@ -30,6 +30,8 @@ SHyFTSelector::SHyFTSelector( edm::ParameterSet const & params ) :
     tauTag_          (params.getParameter<edm::InputTag>("tauSrc")),
     muTrig_          (params.getParameter<std::string>("muTrig")),
     eleTrig_         (params.getParameter<std::string>("eleTrig")),
+    puDataFileName_  (params.getParameter<std::string>("puDataFileName")),
+    puMCFileName_    (params.getParameter<std::string>("puMCFileName")),
     pvSelector_      (params.getParameter<edm::ParameterSet>("pvSelector") ),
     electronIdVeto_  (params.getParameter<edm::ParameterSet>("electronIdVeto") ),
     minJets_         (params.getParameter<int> ("minJets") ),
@@ -41,6 +43,9 @@ SHyFTSelector::SHyFTSelector( edm::ParameterSet const & params ) :
     muEtaMax_        (params.getParameter<double>("muEtaMax")),
     eleEtMin_        (params.getParameter<double>("eleEtMin")),
     eleEtaMax_       (params.getParameter<double>("eleEtaMax")),
+    tauPtMin_        (params.getParameter<double>("tauPtMin")),
+    tauPtMax_        (params.getParameter<double>("tauPtMax")),
+    tauEtaMax_       (params.getParameter<double>("tauEtaMax")),
     muPtMinLoose_    (params.getParameter<double>("muPtMinLoose")),
     muEtaMaxLoose_   (params.getParameter<double>("muEtaMaxLoose")),
     eleEtMinLoose_   (params.getParameter<double>("eleEtMinLoose")),
@@ -48,8 +53,6 @@ SHyFTSelector::SHyFTSelector( edm::ParameterSet const & params ) :
     jetPtMin_        (params.getParameter<double>("jetPtMin")),
     jetEtaMax_       (params.getParameter<double>("jetEtaMax")),
     jetScale_        (params.getParameter<double>("jetScale")),
-    tauPtMin_        (params.getParameter<double>("tauPtMin")),
-    tauEtaMax_       (params.getParameter<double>("tauEtaMax")),
     jetSmear_        (params.getParameter<double>("jetSmear")),
     unclMetScale_    (params.getParameter<double>("unclMetScale")),
     ePtScale_        (params.getParameter<double>("ePtScale")),
@@ -63,9 +66,7 @@ SHyFTSelector::SHyFTSelector( edm::ParameterSet const & params ) :
     useNoPFIso_      (params.getParameter<bool>("useNoPFIso")),
     useNoID_         (params.getParameter<bool>("useNoID")),
     pfEleSrc_        (params.getParameter<edm::InputTag>( "pfEleSrc" )),
-    jecPayloads_     (params.getParameter<std::vector<std::string> >("jecPayloads")),
-    puMCFileName_    (params.getParameter<std::string>("puMCFileName")),
-    puDataFileName_  (params.getParameter<std::string>("puDataFileName"))
+    jecPayloads_     (params.getParameter<std::vector<std::string> >("jecPayloads"))
 {
    electronIdVeto_.setUseData(useData_);
 
@@ -233,9 +234,9 @@ bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & 
             edm::Handle<std::vector<reco::Vertex> > primVtxHandle;
             event.getByLabel(pvTag_, primVtxHandle);
 
-            double PVz = -999; Point PV(0,0,0);
+            Point PV(0,0,0);
             if ( primVtxHandle->size() > 0 ) {
-                PVz = primVtxHandle->at(0).z();
+                //PVz = primVtxHandle->at(0).z();
                 PV  = primVtxHandle->at(0).position();
             } else {
                 throw cms::Exception("InvalidInput") << " There needs to be at least one primary vertex in the event." << std::endl;
@@ -732,9 +733,9 @@ bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & 
         double dataIntegral = puDataHist_->Integral();
         double mcVal = puMCHist_->GetBinContent(mcBin);
         double dataVal = puDataHist_->GetBinContent(dataBin);
-        float puWeight_ = (dataVal * mcIntegral) / (mcVal * dataIntegral);
+        puWeight_ = (dataVal * mcIntegral) / (mcVal * dataIntegral);
     } else {
-        float puWeight_ = 1.0;
+        puWeight_ = 1.0;
     }
     setIgnored(ret);
     return (bool)ret;
