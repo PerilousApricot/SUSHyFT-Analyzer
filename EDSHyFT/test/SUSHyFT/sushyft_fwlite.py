@@ -1253,11 +1253,12 @@ def runOnce(options, events):
                                    0)
             singleTopDiscriminatorT = (leadingBJet + lepVector + metVector).Mt()
             singleTopDiscriminator  = (leadingBJet + lepVector + metVector).M()
-            wRLeadingVector = leadingBJet + lepVector + metVector
-            wRTrailingVector = leadingLightJet
-            # TMath::Abs(normalizedPhi(v1.phi()-v2.phi()))
-            deltaPhi = wRLeadingVector.Phi() - wRTrailingVector.Phi()
-            wRDiscriminator = abs(normalizedPhi(deltaPhi))
+            if leadingLightJet:
+                wRLeadingVector = leadingBJet + lepVector + metVector
+                wRTrailingVector = leadingLightJet
+                # TMath::Abs(normalizedPhi(v1.phi()-v2.phi()))
+                deltaPhi = wRLeadingVector.Phi() - wRTrailingVector.Phi()
+                wRDiscriminator = abs(normalizedPhi(deltaPhi))
         
         if numB > 0:
             flavorIndex = 0
