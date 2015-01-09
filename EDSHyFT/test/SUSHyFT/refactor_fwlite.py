@@ -406,7 +406,7 @@ class ROOTEventInfo(SHyFTEventInfo):
         self.puDataHist = self.puDataFile.Get("analyzeHiMassTau/NVertices_0") 
         self.puMCIntegral = self.puMCHist.Integral()
         self.puDataIntegral = self.puDataHist.Integral()
-        self.puInfoLabel = ("addPileupInfo", "HLT")
+        self.puInfoLabel = ("addPileupInfo")
         self.puInfoHandle = Handle("std::vector<PileupSummaryInfo>")
         self.vertH = Handle("std::vector<reco::Vertex>")
         self.vertLabel = ("offlinePrimaryVertices")
