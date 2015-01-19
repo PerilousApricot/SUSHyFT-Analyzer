@@ -628,27 +628,28 @@ currentEvent = 0
 percentDoneLast = -1
 lastTime = time.time()
 lastEvent = 0
-for event in events:
-    percentDone = int(200.0 * currentEvent/ntotal)
-    if percentDone != percentDoneLast:
-        percentDoneLast = percentDone
-        currentTime = time.time()
-        if (currentTime - lastTime) != 0:
-            eventsPerSecond = (currentEvent - lastEvent) / (currentTime - lastTime)
-        else:
-            eventsPerSecond = 0
-        lastTime = currentTime
-        lastEvent = currentEvent
-        print '  Processing {0:9.0f}/{1:.0f}: {2:5.1f}% {3:7.0f} ev/sec'.format( 
-                    currentEvent, ntotal, percentDone/2.0, eventsPerSecond)
-    currentEvent += 1
-    for eventWrapper in eventWrapperList:
-        eventWrapper.resetHandles()
-        eventWrapper.event = None
-    for analyze, eventWrapper in zip(analyzerList, eventWrapperList):
-        eventWrapper.event = event
-        analyze.processEvent(eventWrapper)
-    stopTime = time.time()
+if events.size():
+    for event in events:
+        percentDone = int(200.0 * currentEvent/ntotal)
+        if percentDone != percentDoneLast:
+            percentDoneLast = percentDone
+            currentTime = time.time()
+            if (currentTime - lastTime) != 0:
+                eventsPerSecond = (currentEvent - lastEvent) / (currentTime - lastTime)
+            else:
+                eventsPerSecond = 0
+            lastTime = currentTime
+            lastEvent = currentEvent
+            print '  Processing {0:9.0f}/{1:.0f}: {2:5.1f}% {3:7.0f} ev/sec'.format( 
+                        currentEvent, ntotal, percentDone/2.0, eventsPerSecond)
+        currentEvent += 1
+        for eventWrapper in eventWrapperList:
+            eventWrapper.resetHandles()
+            eventWrapper.event = None
+        for analyze, eventWrapper in zip(analyzerList, eventWrapperList):
+            eventWrapper.event = event
+            analyze.processEvent(eventWrapper)
+        stopTime = time.time()
 for analyze in analyzerList:
     analyze.close()
 elaspedTime = stopTime - startTime
