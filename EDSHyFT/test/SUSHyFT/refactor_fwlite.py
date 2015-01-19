@@ -33,6 +33,7 @@ class FWLiteAnalysis:
         self.ignoreMet = False
         # stupid global variables
         self.output = ROOT.TFile(outputFile + ".root", "recreate")
+        print "Openting outputFile %s" % outputFile
         self.output.cd()
         self.binnedHists = []
         if self.isData:
@@ -243,7 +244,10 @@ class FWLiteAnalysis:
         leadingBJet = None
         leadingLightJetPt = 0
         leadingLightJet = None
-        eventFlavor = 0
+        if self.isData:
+            eventFlavor = 0
+        else:
+            eventFlavor = 2
         hT = lepPt + metRaw
         lep_px = lepPt * math.cos( lepPhi )
         lep_py = lepPt * math.sin( lepPhi )
@@ -288,6 +292,8 @@ class FWLiteAnalysis:
                     eventFlavor = 0
                 elif abs(jetFlavor) == 4:
                     eventFlavor = min(eventFlavor, 1)
+                else:
+                    eventFlavor = min(eventFlavor, 2)
 
         lepVector = ROOT.TLorentzVector()
         lepVector.SetPtEtaPhiM(lepPt,
@@ -314,11 +320,13 @@ class FWLiteAnalysis:
                 wRDiscriminator = abs(normalizedPhi(deltaPhi))
         binInfo = (nJets, nBTags, nTTags, eventFlavor)
         self.fillBinnedHist("nJets", binInfo, nJets)
-        self.fillBinnedHist("nAmbiguous", binInfo, nAmbiguous)
+        if nAmbiguous:
+            self.fillBinnedHist("nAmbiguous", binInfo, nAmbiguous)
         self.fillBinnedHist("nPV", binInfo, vertices.size(), PUWeight )    
         self.fillBinnedHist("lepEta" , binInfo, lepEta, PUWeight )
         self.fillBinnedHist("lepPt" , binInfo, lepPt, PUWeight )
-        self.fillBinnedHist("centrality" , binInfo, sumEt / sumE, PUWeight )
+        if sumE != 0.0:
+            self.fillBinnedHist("centrality" , binInfo, sumEt / sumE, PUWeight )
         self.fillBinnedHist("sumEt" , binInfo, sumEt, PUWeight )
         self.fillBinnedHist("MET" , binInfo, metRaw, PUWeight )
         self.fillBinnedHist("wMT" , binInfo, wMT, PUWeight )
@@ -393,7 +401,6 @@ class ROOTEventInfo(SHyFTEventInfo):
 
         self.metHandle = Handle( "std::vector<float>" )
         self.metLabel = ("pfShyftTupleMET" + lepStr +  postfix,   "pt" )
-        print self.metLabel
         self.metPhiHandle = Handle( "std::vector<float>" )
         self.metPhiLabel = ("pfShyftTupleMET" + lepStr +  postfix,   "phi" )
 
@@ -438,6 +445,7 @@ class ROOTEventInfo(SHyFTEventInfo):
     def getByTitle(self, title):
         if title in self.eventCache:
             return self.eventCache[title]
+        print "Title %s Label %s Handle %s .. eventID %s -- event %s" % (title, self.varLookup[title][0], id(self.varLookup[title][1]), id(self.event), self.event)
         self.event.getByLabel(*self.varLookup[title])
         if self.varLookup[title][1].isValid():
             product = self.varLookup[title][1].product()
@@ -576,14 +584,14 @@ else:
             if subOptions.__dict__[key] != None:
                 setattr(optCopy, key, subOptions.__dict__[key])
         argList.append([optCopy, argCopy])
-        if optCopy.outname in outNames:
+        if subOptions.outname in outNames:
             raise RuntimeError, "Two iterations are writing to same output"
-        outNames.append(optCopy.outputFile)
-        analyzerList.append(FWLiteAnalysis())
+        outNames.append(subOptions.outname)
+        analyzerList.append(FWLiteAnalysis(outputFile=optCopy.outname, isData=optCopy.useData))
         eventWrapperList.append(ROOTEventInfo(lepStr='mu',
                                             postfix='',
-                                            puMCInput=options.puMCInput,
-                                            puDataInput=options.puDataInput))
+                                            puMCInput=optCopy.puMCInput,
+                                            puDataInput=optCopy.puDataInput))
 
 #ROOT.gSystem.Load('libCondFormatsJetMETObjects')
 
