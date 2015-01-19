@@ -35,6 +35,8 @@ class FWLiteAnalysis:
         self.output = ROOT.TFile(outputFile + ".root", "recreate")
         self.output.cd()
         self.binnedHists = []
+        self.totalEvents = 0
+        self.eventsPassed = 0
         if self.isData:
             self.flavorNames = [""]
         else:
@@ -318,7 +320,8 @@ class FWLiteAnalysis:
         self.fillBinnedHist("nPV", binInfo, vertices.size(), PUWeight )    
         self.fillBinnedHist("lepEta" , binInfo, lepEta, PUWeight )
         self.fillBinnedHist("lepPt" , binInfo, lepPt, PUWeight )
-        self.fillBinnedHist("centrality" , binInfo, sumEt / sumE, PUWeight )
+        if sumE != 0.0:
+            self.fillBinnedHist("centrality" , binInfo, sumEt / sumE, PUWeight )
         self.fillBinnedHist("sumEt" , binInfo, sumEt, PUWeight )
         self.fillBinnedHist("MET" , binInfo, metRaw, PUWeight )
         self.fillBinnedHist("wMT" , binInfo, wMT, PUWeight )
