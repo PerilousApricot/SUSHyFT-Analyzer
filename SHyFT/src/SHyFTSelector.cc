@@ -44,7 +44,6 @@ SHyFTSelector::SHyFTSelector( edm::ParameterSet const & params ) :
     eleEtMin_        (params.getParameter<double>("eleEtMin")),
     eleEtaMax_       (params.getParameter<double>("eleEtaMax")),
     tauPtMin_        (params.getParameter<double>("tauPtMin")),
-    tauPtMax_        (params.getParameter<double>("tauPtMax")),
     tauEtaMax_       (params.getParameter<double>("tauEtaMax")),
     muPtMinLoose_    (params.getParameter<double>("muPtMinLoose")),
     muEtaMaxLoose_   (params.getParameter<double>("muEtaMaxLoose")),
