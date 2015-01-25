@@ -137,7 +137,7 @@ SHyFTSelector::SHyFTSelector( edm::ParameterSet const & params ) :
     // The payloads contain N elements, the Nth is the uncertainty, and the first N-1 elements are the
     // actual correction levels.The N-2 element is only used for data
     vector<JetCorrectorParameters> vPar;
-    for ( std::vector<std::string>::const_iterator payloadBegin = jecPayloads_.begin(),
+    for ( auto payloadBegin = jecPayloads_.begin(),
             payloadEnd = jecPayloads_.end(), ipayload = payloadBegin; ipayload != payloadEnd - 1; ++ipayload ) {
         std::cout << "Attempting to load payload " << *ipayload << std::endl;
         JetCorrectorParameters pars(*ipayload);
@@ -169,6 +169,10 @@ SHyFTSelector::SHyFTSelector( edm::ParameterSet const & params ) :
     // Attempt to split the trigger into a list of triggers
     boost::algorithm::split(eleTriggerList_, eleTrig_, boost::algorithm::is_any_of(","));
     boost::algorithm::split(muTriggerList_, muTrig_, boost::algorithm::is_any_of(","));
+    std::cout << "Comfiguring SHyFTSelector with following parameters:\n";
+    std::string psetDump;
+    params.allToString(psetDump);
+    std<< cout << psetDump << std::endl << std::endl;
 }
 
 bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & ret)
@@ -456,40 +460,30 @@ bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & 
 
                 if ( scaledJet.pt() > jetPtMin_ && fabs(scaledJet.eta()) < jetEtaMax_ ) {
                    //selectedJets_.push_back( scaledJet );
-                    cleanedJets_.push_back( scaledJet );
+                   //cleanedJets_.push_back( scaledJet );
 
-/*
                     if ( muPlusJets_ ) {
                         //Remove some jets
                         bool indeltaR = false;
-                        for( std::vector<reco::ShallowClonePtrCandidate>::const_iterator muonBegin = selectedMuons_.begin(),
+                        typedef std::vector<reco::ShallowClonePtrCandidate> cont;
+                        for( cont::const_iterator muonBegin = selectedMuons_.begin(),
                                 muonEnd = selectedMuons_.end(), imuon = muonBegin;
                                 imuon != muonEnd; ++imuon ) {
-                            if( reco::deltaR( imuon->eta(), imuon->phi(), scaledJet.eta(), scaledJet.phi() ) < muJetDR_ )
-                            {  indeltaR = true; }
+                            if( reco::deltaR( imuon->eta(),
+                                              imuon->phi(),
+                                              scaledJet.eta(),
+                                              scaledJet.phi() ) < muJetDR_ ) {
+                                indeltaR = true; 
+                            }
                         }
                         if( !indeltaR ) {
                             cleanedJets_.push_back( scaledJet );
                         }// end if jet is not within dR of a muon
                     }// end if mu+jets
                     else {
-
-                        //Remove some jets
-                        bool indeltaR = false;
-                        for( std::vector<reco::ShallowClonePtrCandidate>::const_iterator electronBegin = selectedElectrons_.begin(),
-                                electronEnd = selectedElectrons_.end(), ielectron = electronBegin;
-                                ielectron != electronEnd; ++ielectron ) {
-
-                            const pat::Electron * electron_ = dynamic_cast<const pat::Electron *>(ielectron->masterClonePtr().get());
-
-                            if( reco::deltaR( ielectron->eta(), ielectron->phi(), scaledJet.eta(), scaledJet.phi() ) < eleJetDR_ ){
-                                indeltaR = true; }
-                        }
-                        if( !indeltaR ) {
-                            cleanedJets_.push_back( scaledJet );
-                        }// end if jet is not within dR of an electron
+                        throw cms::Exception("Only mu+jets is currently supported");
                     }// end if e+jets
-*/
+
                 }// end if pass id and kin cuts
             }// end loop over jets
 
