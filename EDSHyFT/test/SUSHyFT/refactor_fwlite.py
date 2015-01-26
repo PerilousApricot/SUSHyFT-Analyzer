@@ -101,8 +101,8 @@ class FWLiteAnalysis:
         for plot in p:
             self.addSimpleHist(*plot)
 
-        names = ['nPV', 'nPVnoPU','lepEta','lepPt', 'centrality','sumEt', 'MET', 'wMT', 'hT', 'std', 'stdt','wrp','nAmbiguous','nJets']
-        titles = ['number of Primary Vertices','number of Primary Vertices no PileUp','Lepton #eta', 'Lepton pt', 'Centrality','#sum E_{T}','MET', 'M_{WT}', 'hT', "SingleTopDisc", "SingleTopDiscT",'wJetR', 'Ambiguous Jets', 'nJets']
+        names = ['nPV', 'nPVnoPU','lepEta','lepPt', 'centrality','sumEt', 'MET', 'wMT', 'hT', 'std', 'stdt','wrp','nAmbiguous','nJets','dPhi2JetMET','mTLeadMuoMET','2MuonInvMass']
+        titles = ['number of Primary Vertices','number of Primary Vertices no PileUp','Lepton #eta', 'Lepton pt', 'Centrality','#sum E_{T}','MET', 'M_{WT}', 'hT', "SingleTopDisc", "SingleTopDiscT",'wJetR', 'Ambiguous Jets', 'nJets', 'dPhi between 2nd Jet and MET','mT_{lead muon, MET}','invariant mass, 2 muons']
         bounds = [  [25, -0.5, 24.5],
                     [25,-0.5,24.5],
                     [30,0.,3.0],
@@ -117,6 +117,9 @@ class FWLiteAnalysis:
                     [165,0.,3.3],
                     [5,0.5,4.5],
                     [5,0.5,4.5],
+                    [165,0.,3.3],
+                    [240,0,480],
+                    [240,0,480],
                 ]
         for plot in itertools.izip(names,titles,bounds):
             self.addBinnedHist(plot[0],plot[1],*plot[2])
@@ -160,8 +163,7 @@ class FWLiteAnalysis:
     
     def leptonCut(self, event):
          # Always require exactly one muon. future should be different leps.
-        #eleCount = self.handleLepton(event, "ele", 35)
-        eleCount = 0
+        eleCount = self.handleLepton(event, "ele", 35)
         muonCount = self.handleLepton(event, "mu", 35)
         return muonCount != 1 or eleCount != 0
 
@@ -217,17 +219,57 @@ class FWLiteAnalysis:
         return nJets, nBTags, nTTags, nAmbiguous, bTagIndices
 
     def processEvent(self, event):
+        print "processing event"
         PUWeight = self.getPUWeight(event)
         self.fillSimpleHist("nEvents", 1, PUWeight)
-        self.fillSimpleHist("nEventsNoPU", 1)
-        if self.shouldCut(event):
-            return
+        self.fillSimpleHist("nEventsNoPU", 1, 1.0)
+
         nJets, nBTags, nTTags, nAmbiguous, bTagIndices = self.countJets(event)
+        # get necessary kinematics
+        if self.isData:
+            eventFlavor = 0
+        else:
+            eventFlavor = 2
+            jetFlavors = event.getByTitle('jetFlavors')
+            for jetFlavor in jetFlavors:
+                if abs(jetFlavor) == 5:
+                    eventFlavor = 0
+                elif abs(jetFlavor) == 4:
+                    eventFlavor = min(eventFlavor, 1)
+                else:
+                    eventFlavor = min(eventFlavor, 2)
+
         nJets = min(nJets, self.maxJets)
         nBTags = min(nBTags, self.maxBJets)
         bTagIndices = bTagIndices[0:nBTags]
         nTTags = min(nTTags, self.maxTaus)
+        binInfo = (nJets, nBTags, nTTags, eventFlavor)
+        eleCount2Mu = self.handleLepton(event, "ele", 10)
+        muonCount2Mu = self.handleLepton(event, "mu", 10)
+        lepPts = event.getByTitle("lepPts")
+        lepEtas = event.getByTitle("lepEtas")
+        lepPhis = event.getByTitle("lepPhis")
+        if (eleCount2Mu == 0 and muonCount2Mu == 2):
+            #lepPts = event.getByTitle("lepPts")
+            #lepEtas = event.getByTitle("lepEtas")
+            #lepPhis = event.getByTitle("lepPhis")
+            lepMass = 0.10565837
+            lepVector = ROOT.TLorentzVector()
+            lepVector.SetPtEtaPhiM(lepPts[0],
+                                    lepEtas[0],
+                                    lepPhis[0],
+                                    lepMass)
+            lepVector2 = ROOT.TLorentzVector()
+            lepVector2.SetPtEtaPhiM(lepPts[1],
+                                    lepEtas[1],
+                                    lepPhis[1],
+                                    lepMass)
 
+            self.fillBinnedHist("2MuonInvMass", binInfo, (lepVector + lepVector2).M(), PUWeight )    
+
+        # Cut the main kinematic plots
+        if self.shouldCut(event):
+            return
         # Get kinematics
         metRaw = event.getByTitle("metPt")[0]
         metPhi = event.getByTitle("metPhi")[0]
@@ -235,30 +277,29 @@ class FWLiteAnalysis:
         jetEtas = event.getByTitle("jetEtas")
         jetPhis = event.getByTitle("jetPhis")
         jetMasses = event.getByTitle("jetMasses")
-        if not self.isData:
-            jetFlavors = event.getByTitle("jetFlavors")
-        lepPt = event.getByTitle("lepPts")[0]
-        lepEta = event.getByTitle("lepEtas")[0]
-        lepPhi = event.getByTitle("lepPhis")[0]
+        #lepPts = event.getByTitle("lepPts")
+        #lepEtas = event.getByTitle("lepEtas")
+        #lepPhis = event.getByTitle("lepPhis")
         lepMass = 0.10565837
+
         allJets = []
         leadingBJetPt = 0
         leadingBJet = None
         leadingLightJetPt = 0
         leadingLightJet = None
-        if self.isData:
-            eventFlavor = 0
-        else:
-            eventFlavor = 2
-        hT = lepPt + metRaw
-        lep_px = lepPt * math.cos( lepPhi )
-        lep_py = lepPt * math.sin( lepPhi )
-        wPt = lepPt + metRaw
+        hT = lepPts[0] + metRaw
+        lep_px = lepPts[0] * math.cos( lepPhis[0] )
+        lep_py = lepPts[0] * math.sin( lepPhis[0] )
+        wPt = lepPts[0] + metRaw
         met_px = metRaw * math.cos( metPhi )
         met_py = metRaw * math.sin( metPhi )
         wPx = lep_px + met_px
         wPy = lep_py + met_py
         wMT = math.sqrt(wPt*wPt-wPx*wPx-wPy*wPy)
+
+        # dPhi(jet[1], MET)
+        if jetPts.size() > 1:
+            dPhi2JetMET = normalizedPhi(jetPhis[1] - metPhi)
         sumEt = 0.
         sumPt = 0.
         sumE = 0.
@@ -271,8 +312,8 @@ class FWLiteAnalysis:
                                  jetPhis[ijet],
                                  jetMasses[ijet])
             allJets.append(thisJet)
-            deta = thisJet.Eta() - lepEta
-            dphi = thisJet.Phi() - lepPhi
+            deta = thisJet.Eta() - lepEtas[0]
+            dphi = thisJet.Phi() - lepPhis[0]
             dphi = normalizedPhi(dphi)
             deltaR = min( math.sqrt(deta*deta + dphi*dphi), deltaR)
             hT    += thisJet.Et()    
@@ -288,20 +329,19 @@ class FWLiteAnalysis:
                 if jetPt > leadingLightJetPt:
                     leadingLightJet = thisJet
                     leadingLightJetPt = jetPt
-            if not self.isData:
-                jetFlavor = jetFlavors[ijet]
-                if abs(jetFlavor) == 5:
-                    eventFlavor = 0
-                elif abs(jetFlavor) == 4:
-                    eventFlavor = min(eventFlavor, 1)
-                else:
-                    eventFlavor = min(eventFlavor, 2)
 
         lepVector = ROOT.TLorentzVector()
-        lepVector.SetPtEtaPhiM(lepPt,
-                                lepEta,
-                                lepPhi,
+        lepVector.SetPtEtaPhiM(lepPts[0],
+                                lepEtas[0],
+                                lepPhis[0],
                                 lepMass)
+        if lepPts.size() > 1:
+            lepVector2 = ROOT.TLorentzVector()
+            lepVector2.SetPtEtaPhiM(lepPts[1],
+                                    lepEtas[1],
+                                    lepPhis[1],
+                                    lepMass)
+
         metVector = ROOT.TLorentzVector()
         metVector.SetPtEtaPhiM(metRaw,
                                 0,
@@ -320,15 +360,17 @@ class FWLiteAnalysis:
                 # TMath::Abs(normalizedPhi(v1.phi()-v2.phi()))
                 deltaPhi = wRLeadingVector.Phi() - wRTrailingVector.Phi()
                 wRDiscriminator = abs(normalizedPhi(deltaPhi))
-        binInfo = (nJets, nBTags, nTTags, eventFlavor)
         self.fillBinnedHist("nJets", binInfo, nJets)
         if nAmbiguous:
             self.fillBinnedHist("nAmbiguous", binInfo, nAmbiguous)
         self.fillBinnedHist("nPV", binInfo, vertices.size(), PUWeight )    
-        self.fillBinnedHist("lepEta" , binInfo, lepEta, PUWeight )
-        self.fillBinnedHist("lepPt" , binInfo, lepPt, PUWeight )
+        self.fillBinnedHist("nPVnoPU", binInfo, vertices.size(), 1 )    
+        self.fillBinnedHist("lepEta" , binInfo, lepEtas[0], PUWeight )
+        self.fillBinnedHist("lepPt" , binInfo, lepPts[0], PUWeight )
         if sumE != 0.0:
             self.fillBinnedHist("centrality" , binInfo, sumEt / sumE, PUWeight )
+        if jetPts.size() > 1:
+            self.fillBinnedHist("dPhi2JetMET" , binInfo, dPhi2JetMET, PUWeight )
         self.fillBinnedHist("sumEt" , binInfo, sumEt, PUWeight )
         self.fillBinnedHist("MET" , binInfo, metRaw, PUWeight )
         self.fillBinnedHist("wMT" , binInfo, wMT, PUWeight )
@@ -446,8 +488,9 @@ class ROOTEventInfo(SHyFTEventInfo):
 
     def getByTitle(self, title):
         if title in self.eventCache:
+            print "cache hit %s" % [(self.varLookup[title])]
             return self.eventCache[title]
-        print "Title %s Label %s Handle %s .. eventID %s -- event %s" % (title, self.varLookup[title][0], id(self.varLookup[title][1]), id(self.event), self.event)
+        print "getting %s" % [(self.varLookup[title])]
         self.event.getByLabel(*self.varLookup[title])
         if self.varLookup[title][1].isValid():
             product = self.varLookup[title][1].product()
@@ -457,6 +500,7 @@ class ROOTEventInfo(SHyFTEventInfo):
         return product
 
     def resetHandles(self):
+        print "resetting cache"
         self.eventCache = {}
 # helper function from c++
 def normalizedPhi(phi):

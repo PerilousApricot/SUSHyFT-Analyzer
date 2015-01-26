@@ -172,7 +172,7 @@ SHyFTSelector::SHyFTSelector( edm::ParameterSet const & params ) :
     std::cout << "Comfiguring SHyFTSelector with following parameters:\n";
     std::string psetDump;
     params.allToString(psetDump);
-    std<< cout << psetDump << std::endl << std::endl;
+    std::cout << psetDump << std::endl << std::endl;
 }
 
 bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & ret)
