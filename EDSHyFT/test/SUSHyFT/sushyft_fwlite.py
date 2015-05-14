@@ -958,56 +958,12 @@ def runOnce(options, events):
             #remove the uncorrected jets
             met_px = met_px + thisJet.Px()
             met_py = met_py + thisJet.Py()
-    ## """ 
-    ##         #unclustered MET resolution
-    ##         unclMETScale = 1.0
-    ##         if not options.useData and abs(metScale)> 0.0:
-    ##             #remove the electron and muon
-    ##             if muonPts is not None:
-    ##                 for imuonPt in range(0,len(muonPts)):
-    ##                     muonPt = muonPts[imuonPt]
-    ##                     muonPhi = muonsPhis[imuonPt]
-    ##                     mu_px = muonPts[imuonPt]*math.cos(muonPhis[imuonPt])
-    ##                     mu_py = muonPts[imuonPt]*math.sin(muonPhis[imuonPt])
-    ##                     met_px = met_px + mu_px 
-    ##                     met_py = met_py + mu_py 
-    ##             if electronPts is not None:
-    ##                 for ielectronPt in range(0,len(electronPts)):
-    ##                     electronPt = electronPts[ielectronPt]
-    ##                     electronPhi = electronPhis[ielectronPt]
-    ##                     el_px = electronPts[ielectronPt]*math.cos(electronPhis[ielectronPt])
-    ##                     el_py = electronPts[ielectronPt]*math.sin(electronPhis[ielectronPt])
-    ##                     met_px = met_px + el_px
-    ##                     met_py = met_py + el_py
-                        
-    ##             #apply the 10% variation of 0.9 or 1.1
-    ##             unclMETScale = 1 +  0.1*metScale
-    ##             met_px = met_px*unclMETScale
-    ##             met_py = met_py*unclMETScale
-                
-    ##             #add back the electron and muon
-    ##             if muonPts is not None:
-    ##                 for imuonPt in range(0,len(muonPts)):
-    ##                     muonPt = muonPts[imuonPt]
-    ##                     muonPhi = muonsPhis[imuonPt]
-    ##                     mu_px = muonPts[imuonPt]*math.cos(muonPhis[imuonPt])
-    ##                     mu_py = muonPts[imuonPt]*math.sin(muonPhis[imuonPt])
-    ##                     met_px = met_px - mu_px 
-    ##                     met_py = met_py - mu_py 
-    ##             if electronPts is not None:
-    ##                 for ielectronPt in range(0,len(electronPts)):
-    ##                     electronPt = electronPts[ielectronPt]
-    ##                     electronPhi = electronPhis[ielectronPt]
-    ##                     el_px = electronPts[ielectronPt]*math.cos(electronPhis[ielectronPt])
-    ##                     el_py = electronPts[ielectronPt]*math.sin(electronPhis[ielectronPt])
-    ##                     met_px = met_px - el_px
-    ##                     met_py = met_py - el_py  
-    ## """
-            #apply the SF and add back the jets and also correct the MET
+
+            #apply the SF and add back the jets
             thisJet = thisJet * jetScale
             met_px = met_px - thisJet.Px()
             met_py = met_py - thisJet.Py()
-            #if thisJet.Pt() > jetPtMin:
+
             jets.append( thisJet )
 
         met = math.sqrt(met_px*met_px + met_py*met_py)
@@ -1419,9 +1375,12 @@ def runOnce(options, events):
             # and weight the distributions by the resultant probability. 
             effCombos = EffInfoCombinations( effs, verbose=False )
             # TODO blergh - add the tau tagging probability
-
+            ptagList = []
             for itag in range(0,njets+1):
                 pTag = effCombos.pTag( itag )
+                ptagList.append(pTag)
+                if itag == njets:
+                    print "ptag: %s" % ptagList
                 jtag = itag
                 if jtag > maxBTags:
                     jtag = maxBTags
