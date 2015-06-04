@@ -16,8 +16,29 @@ from optparse import OptionParser
 import sys
 import time
 
+from Analysis.SHyFTScripts.combinations import EffInfo, EffInfoCombinations
+# load JEC uncertainty stuff
+jecParStr = ROOT.std.string('Jec12_V3_Uncertainty_AK5PFchs.txt')
+jecUnc = ROOT.JetCorrectionUncertainty( jecParStr )
+
+
 class FWLiteAnalysis:
-    def __init__(self, outputFile, maxJets = 9, maxBJets = 9, maxTaus = 9, elePtMin = 35, muPtMin = 35, isData = False):
+    def __init__(self, outputFile, 
+                        maxJets = 9,
+                        maxBJets = 9, 
+                        maxTaus = 9,
+                        elePtMin = 35,
+                        muPtMin = 35,
+                        isData = False,
+                        noMET = False,
+                        metMin = 20,
+                        flipTauOrder = False,
+                        jetPt = 35,
+                        invertTauCut = False,
+                        jecScale = 0.0,
+                        sfB = 1.0,
+                        sfC = 1.0,
+                        sfQ = 1.0):
         self.simpleHists = {}
         self.binnedHists = {}
         self.maxJets = maxJets
@@ -26,11 +47,13 @@ class FWLiteAnalysis:
         self.isData = isData
         self.elePtMin = elePtMin
         self.muPtMin = muPtMin
-        self.jetPtMin = 35
-        self.metMin = 20
+        self.jetPtMin = int(jetPt)
+        self.metMin = int(metMin)
         self.bTagCut = 0.678
         self.tTagCut = 0.5
-        self.ignoreMet = False
+        self.ignoreMet = noMET
+        self.invertTauCut = invertTauCut
+        self.flipTauOrder = flipTauOrder
         # stupid global variables
         self.output = ROOT.TFile(outputFile + ".root", "recreate")
         print "Openting outputFile %s" % outputFile
@@ -38,6 +61,10 @@ class FWLiteAnalysis:
         self.binnedHists = []
         self.totalEvents = 0
         self.eventsPassed = 0
+        self.sfB = sfB
+        self.sfC = sfC
+        self.sfQ = sfQ
+        self.jecScale = jecScale
         if self.isData:
             self.flavorNames = [""]
         else:
@@ -78,9 +105,13 @@ class FWLiteAnalysis:
     def getBin(self, binInfo):
         # TODO: Memoize this
         target = self.binnedHists
-        for row in binInfo:
-            target = target[row]
-        return target
+        try:
+            for row in binInfo:
+                target = target[row]
+            return target
+        except:
+            print "Couldn't update bin %s target %s" % (binInfo, target)
+            raise
 
     def fillBinnedHist(self, name, binInfo, value, weight = 1.0):
         self.getBin(binInfo)[name].Fill(value, weight)
@@ -101,25 +132,66 @@ class FWLiteAnalysis:
         for plot in p:
             self.addSimpleHist(*plot)
 
-        names = ['nPV', 'nPVnoPU','lepEta','lepPt', 'centrality','sumEt', 'MET', 'wMT', 'hT', 'std', 'stdt','wrp','nAmbiguous','nJets','dPhi2JetMET','mTLeadMuoMET','2MuonInvMass']
-        titles = ['number of Primary Vertices','number of Primary Vertices no PileUp','Lepton #eta', 'Lepton pt', 'Centrality','#sum E_{T}','MET', 'M_{WT}', 'hT', "SingleTopDisc", "SingleTopDiscT",'wJetR', 'Ambiguous Jets', 'nJets', 'dPhi between 2nd Jet and MET','mT_{lead muon, MET}','invariant mass, 2 muons']
-        bounds = [  [25, -0.5, 24.5],
-                    [25,-0.5,24.5],
-                    [30,0.,3.0],
-                    [100,0.,200],
-                    [120,0.,1.2],
-                    [100,0.,1000.],
-                    [120,0.,300.],
-                    [120,0.,300.],
-                    [120,0.,1200.],
-                    [240,0.,600.],
-                    [240,0.,600.],
-                    [165,0.,3.3],
-                    [5,0.5,4.5],
-                    [5,0.5,4.5],
-                    [165,0.,3.3],
-                    [240,0,480],
-                    [240,0,480],
+        names = ['nPV', 
+                 'nPVnoPU',
+                 'lepEta',
+                 'lepPt',
+                 'centrality',
+                 'sumEt',
+                 'MET',
+                 'wMT',
+                 'hT',
+                 'std',
+                 'stdt',
+                 'wrp',
+                 'nAmbiguous',
+                 'nJets',
+                 'dPhi2JetMET',
+                 'mTLeadMuoMET',
+                 '2MuonInvMass',
+                 'gt2MuonInvMass',
+                 'nMuon',
+                 'nElectron']
+        titles = ['number of Primary Vertices',
+                  'number of Primary Vertices no PileUp',
+                  'Lepton #eta',
+                  'Lepton pt',
+                  'Centrality',
+                  '#sum E_{T}',
+                  'MET',
+                  'M_{WT}',
+                  'hT',
+                  "SingleTopDisc",
+                  "SingleTopDiscT",
+                  'wJetR',
+                  'Ambiguous Jets',
+                  'nJets',
+                  'dPhi between 2nd Jet and MET',
+                  'mT_{lead muon, MET}',
+                  'invariant mass, 2 muons',
+                  'invariant mass, #gt muons'
+                  'nMuons #gt 10GeV',
+                  'nElectrons #gt 10GeV']
+        bounds = [  [40, -0.5, 39.5], #npv
+                    [40,-0.5,39.5], # npbnopu
+                    [30,0.,3.0], #lepeta
+                    [100,0.,200], #leppt
+                    [120,0.,1.2], # centrality
+                    [100,0.,1000.], # sumEt
+                    [300,0.,300.], # MET
+                    [120,0.,300.], # wmt
+                    [120,0.,1200.], #ht
+                    [240,0.,600.], #std
+                    [240,0.,600.], #stdt
+                    [69,-0.05,3.4], #wrp
+                    [10,-0.5,10.5], #ambiguous
+                    [10,-0.5,10.5], # njet
+                    [136,-3.4,3.4], #dphi jet met
+                    [200,0,400], # mt
+                    [100,0,200], # inv mass
+                    [150,0,300], # gt2 muon mass
+                    [10,-0.5,10.5],
+                    [10,-0.5,10.5],
                 ]
         for plot in itertools.izip(names,titles,bounds):
             self.addBinnedHist(plot[0],plot[1],*plot[2])
@@ -127,20 +199,14 @@ class FWLiteAnalysis:
     def getPUWeight(self, event):
         if not self.isData:
             #num of true interations
-            nPV = event.getByTitle('puInfo')
-            if nPV == None:
-                raise RuntimeError, "Couldn't pull PU info from sample"
-            genVertices = -1
-            for iPV in nPV:
-                if iPV.getBunchCrossing() == 0:
-                    genVertices = iPV.getPU_NumInteractions()
-                    break
-            if genVertices == -1:
-                raise RuntimeError, "Couldn't pull PU info from sample"
+            nPV = event.getByTitle('vertices')
+            if nPV <= 0:
+                raise RuntimeError, "Couldn't pull PU info from sample: %s" % nPV
+            nPV = nPV[0]
             dataWeight = event.puDataHist.GetBinContent(
-                                        event.puDataHist.GetBin(genVertices + 1))
+                                        event.puDataHist.GetBin(nPV + 1))
             mcWeight = event.puMCHist.GetBinContent(
-                                        event.puMCHist.GetBin(genVertices + 1))
+                                        event.puMCHist.GetBin(nPV + 1))
             if mcWeight * event.puDataIntegral == 0:
                 PUWeight = 1
             else:
@@ -191,7 +257,7 @@ class FWLiteAnalysis:
         jetPts = event.getByTitle('jetPts')
         jetBDiscs = event.getByTitle('bDisc')
         jetTDiscs = event.getByTitle('tDisc')
-
+        tauPts = event.getByTitle('tauPts')
         if not jetPts:
             return 0,0,0,0,[]
 
@@ -203,26 +269,35 @@ class FWLiteAnalysis:
         for index, jetPt in enumerate(jetPts):
             if jetPt < self.jetPtMin:
                 continue
+            if nJets >= self.maxJets:
+                break
             nJets += 1
             # Here if something is both a B-jet and a Tau, I call it B. Okay?
-            if jetBDiscs[index] > self.bTagCut:
+            passB = jetBDiscs[index] > self.bTagCut
+            if self.invertTauCut:
+                passTau = jetTDiscs[index] < self.tTagCut and tauPts[index] > 20
+            else:
+                passTau = jetTDiscs[index] > self.tTagCut and tauPts[index] > 20
+
+            if passB:
                 bTagIndices.append(index)
                 nBTags += 1
-            elif jetTDiscs[index] > self.tTagCut:
+            elif passTau:
                 nTTags += 1
 
             # I'm not convinced this is such a good idea.. count up the number
             # of ambiguous and non-ambiguous jets
-            if jetBDiscs[index] > self.bTagCut and jetTDiscs[index] > self.tTagCut:
+            if passB and passTau:
                 nAmbiguous += 1
         assert (nTTags + nBTags) <= nJets, "Don't double-count events"
         return nJets, nBTags, nTTags, nAmbiguous, bTagIndices
 
     def processEvent(self, event):
-        print "processing event"
         PUWeight = self.getPUWeight(event)
         self.fillSimpleHist("nEvents", 1, PUWeight)
         self.fillSimpleHist("nEventsNoPU", 1, 1.0)
+        if self.metCut(event):
+            return
 
         nJets, nBTags, nTTags, nAmbiguous, bTagIndices = self.countJets(event)
         # get necessary kinematics
@@ -231,14 +306,6 @@ class FWLiteAnalysis:
         else:
             eventFlavor = 2
             jetFlavors = event.getByTitle('jetFlavors')
-            for jetFlavor in jetFlavors:
-                if abs(jetFlavor) == 5:
-                    eventFlavor = 0
-                elif abs(jetFlavor) == 4:
-                    eventFlavor = min(eventFlavor, 1)
-                else:
-                    eventFlavor = min(eventFlavor, 2)
-
         nJets = min(nJets, self.maxJets)
         nBTags = min(nBTags, self.maxBJets)
         bTagIndices = bTagIndices[0:nBTags]
@@ -249,16 +316,15 @@ class FWLiteAnalysis:
         lepPts = event.getByTitle("lepPts")
         lepEtas = event.getByTitle("lepEtas")
         lepPhis = event.getByTitle("lepPhis")
-        if (eleCount2Mu == 0 and muonCount2Mu == 2):
-            #lepPts = event.getByTitle("lepPts")
-            #lepEtas = event.getByTitle("lepEtas")
-            #lepPhis = event.getByTitle("lepPhis")
+        if muonCount2Mu >= 1:
             lepMass = 0.10565837
             lepVector = ROOT.TLorentzVector()
             lepVector.SetPtEtaPhiM(lepPts[0],
                                     lepEtas[0],
                                     lepPhis[0],
                                     lepMass)
+
+        if (eleCount2Mu == 0 and muonCount2Mu == 2):
             lepVector2 = ROOT.TLorentzVector()
             lepVector2.SetPtEtaPhiM(lepPts[1],
                                     lepEtas[1],
@@ -267,8 +333,28 @@ class FWLiteAnalysis:
 
             self.fillBinnedHist("2MuonInvMass", binInfo, (lepVector + lepVector2).M(), PUWeight )    
 
+        if (eleCount2Mu == 0 and muonCount2Mu > 2):
+            f = math.factorial
+            n = muonCount2Mu
+            r = 2
+            nCr = f(n) / f(r) / f(n-r)
+            for x,y in itertools.combinations(range(muonCount2Mu), 2):
+                lepVector1 = ROOT.TLorentzVector()
+                lepVector1.SetPtEtaPhiM(lepPts[x],
+                                        lepEtas[x],
+                                        lepPhis[x],
+                                        lepMass)
+                lepVector2 = ROOT.TLorentzVector()
+                lepVector2.SetPtEtaPhiM(lepPts[y],
+                                        lepEtas[y],
+                                        lepPhis[y],
+                                        lepMass)
+                self.fillBinnedHist("gt2MuonInvMass", binInfo,
+                                        (lepVector1 + lepVector2).M(),
+                                        float(PUWeight)/ float(nCr) )
+
         # Cut the main kinematic plots
-        if self.shouldCut(event):
+        if self.leptonCut(event):
             return
         # Get kinematics
         metRaw = event.getByTitle("metPt")[0]
@@ -277,9 +363,6 @@ class FWLiteAnalysis:
         jetEtas = event.getByTitle("jetEtas")
         jetPhis = event.getByTitle("jetPhis")
         jetMasses = event.getByTitle("jetMasses")
-        #lepPts = event.getByTitle("lepPts")
-        #lepEtas = event.getByTitle("lepEtas")
-        #lepPhis = event.getByTitle("lepPhis")
         lepMass = 0.10565837
 
         allJets = []
@@ -287,23 +370,20 @@ class FWLiteAnalysis:
         leadingBJet = None
         leadingLightJetPt = 0
         leadingLightJet = None
-        hT = lepPts[0] + metRaw
         lep_px = lepPts[0] * math.cos( lepPhis[0] )
         lep_py = lepPts[0] * math.sin( lepPhis[0] )
-        wPt = lepPts[0] + metRaw
         met_px = metRaw * math.cos( metPhi )
         met_py = metRaw * math.sin( metPhi )
-        wPx = lep_px + met_px
-        wPy = lep_py + met_py
-        wMT = math.sqrt(wPt*wPt-wPx*wPx-wPy*wPy)
-
         # dPhi(jet[1], MET)
-        if jetPts.size() > 1:
+        if nJets > 1:
             dPhi2JetMET = normalizedPhi(jetPhis[1] - metPhi)
         sumEt = 0.
         sumPt = 0.
         sumE = 0.
         deltaR = 5.0
+        isf = 1.0
+        hT = 0.0
+        effs = []
         for ijet, jetPt in enumerate(jetPts):
             ## get the jet 4-vector
             thisJet = ROOT.TLorentzVector()
@@ -311,6 +391,41 @@ class FWLiteAnalysis:
                                  jetEtas[ijet],
                                  jetPhis[ijet],
                                  jetMasses[ijet])
+            # JEC Systematic
+            if not self.isData and self.jecScale != 0.0:
+                # Subtract the jet from the met, correct the jet then replace
+                # it
+                jecUnc.setJetEta( jetEtas[ijet] )
+                jecUnc.setJetPt( jetPts[ijet] )
+                upOrDown = bool(jecScale > 0.0)
+                unc = abs(jecUnc.getUncertainty(upOrDown))
+                jetScale = 1 + unc * jecScale
+                met_px += thisJet.Px()
+                met_py += thisJet.Py()
+                thisJet *= jetScale
+                met_px -= thisJet.Px()
+                met_py -= thisJet.Py()
+
+            # Track btag/lftag systematic
+            if not self.isData:
+                jetFlavor = jetFlavors[ijet]
+                if abs(jetFlavor) == 5:
+                    eventFlavor = 0
+                    iflavor = 0
+                    isf = self.sfB
+                elif abs(jetFlavor) == 4:
+                    eventFlavor = min(eventFlavor, 1)
+                    isf = self.sfC
+                    iflavor = 1
+                else:
+                    eventFlavor = min(eventFlavor, 2)
+                    isf = self.sfQ
+                    iflavor = 2
+                if ijet in bTagIndices:
+                    effs.append(EffInfo(ijet, isf, iflavor))
+                else:
+                    effs.append(EffInfo(ijet, 0.0, iflavor))
+
             allJets.append(thisJet)
             deta = thisJet.Eta() - lepEtas[0]
             dphi = thisJet.Phi() - lepPhis[0]
@@ -330,56 +445,69 @@ class FWLiteAnalysis:
                     leadingLightJet = thisJet
                     leadingLightJetPt = jetPt
 
-        lepVector = ROOT.TLorentzVector()
-        lepVector.SetPtEtaPhiM(lepPts[0],
-                                lepEtas[0],
-                                lepPhis[0],
-                                lepMass)
-        if lepPts.size() > 1:
-            lepVector2 = ROOT.TLorentzVector()
-            lepVector2.SetPtEtaPhiM(lepPts[1],
-                                    lepEtas[1],
-                                    lepPhis[1],
-                                    lepMass)
-
+        metRaw2 = math.sqrt(met_py*met_py + met_px*met_px)
+        metPhi2 = math.atan2(met_py,met_px)
         metVector = ROOT.TLorentzVector()
-        metVector.SetPtEtaPhiM(metRaw,
+        metVector.SetPtEtaPhiM(metRaw2,
                                 0,
-                                metPhi,
+                                metPhi2,
                                 0)
+        wPx = lep_px + met_px
+        wPy = lep_py + met_py
+        wPt = lepPts[0] + metRaw2
+        hT += lepPts[0] + metRaw2
+        wMT = math.sqrt(wPt*wPt-wPx*wPx-wPy*wPy)
 
-        vertices = event.getByTitle("vertices")
-        if not vertices:
-            vertices = []
-        if leadingBJet:
-            singleTopDiscriminatorT = (leadingBJet + lepVector + metVector).Mt()
-            singleTopDiscriminator  = (leadingBJet + lepVector + metVector).M()
-            wRLeadingVector = leadingBJet + lepVector + metVector
-            if leadingLightJet:
-                wRTrailingVector = leadingLightJet
-                # TMath::Abs(normalizedPhi(v1.phi()-v2.phi()))
-                deltaPhi = wRLeadingVector.Phi() - wRTrailingVector.Phi()
-                wRDiscriminator = abs(normalizedPhi(deltaPhi))
-        self.fillBinnedHist("nJets", binInfo, nJets)
-        if nAmbiguous:
-            self.fillBinnedHist("nAmbiguous", binInfo, nAmbiguous)
-        self.fillBinnedHist("nPV", binInfo, vertices.size(), PUWeight )    
-        self.fillBinnedHist("nPVnoPU", binInfo, vertices.size(), 1 )    
-        self.fillBinnedHist("lepEta" , binInfo, lepEtas[0], PUWeight )
-        self.fillBinnedHist("lepPt" , binInfo, lepPts[0], PUWeight )
-        if sumE != 0.0:
-            self.fillBinnedHist("centrality" , binInfo, sumEt / sumE, PUWeight )
-        if jetPts.size() > 1:
-            self.fillBinnedHist("dPhi2JetMET" , binInfo, dPhi2JetMET, PUWeight )
-        self.fillBinnedHist("sumEt" , binInfo, sumEt, PUWeight )
-        self.fillBinnedHist("MET" , binInfo, metRaw, PUWeight )
-        self.fillBinnedHist("wMT" , binInfo, wMT, PUWeight )
-        self.fillBinnedHist("hT" , binInfo, hT, PUWeight )
-        if leadingBJet:
-            self.fillBinnedHist("std" , binInfo, singleTopDiscriminator, PUWeight )
-            self.fillBinnedHist("stdt" , binInfo, singleTopDiscriminatorT, PUWeight )
-            if leadingLightJet:
-                self.fillBinnedHist("wrp" , binInfo, wRDiscriminator, PUWeight )
+        if not self.isData:
+            effCombos = EffInfoCombinations(effs, verbose=False)
+            fillList = []
+            for itag in range(0,nJets+1):
+                pTag = effCombos.pTag( itag )
+                jtag = itag
+                if jtag > self.maxBJets:
+                    jtag = self.maxBJets
+                # use pileup reweighting factor
+                pTag*=PUWeight
+                newBinInfo = list(binInfo[:])
+                newBinInfo[1] = jtag
+                # nBjet + nTjet > nJet
+                if jtag + binInfo[2] > binInfo[0]:
+                    newBinInfo[2] = 0
+                fillList.append([newBinInfo, pTag])
+        else:
+            fillList = [[binInfo, 1]]
+        vertices = event.getByTitle("vertices")[0]
+        for binInfo, PUWeight in fillList:
+            # do the combinatorials
+            if leadingBJet:
+                singleTopDiscriminatorT = (leadingBJet + lepVector + metVector).Mt()
+                singleTopDiscriminator  = (leadingBJet + lepVector + metVector).M()
+                wRLeadingVector = leadingBJet + lepVector + metVector
+                if leadingLightJet:
+                    wRTrailingVector = leadingLightJet
+                    # TMath::Abs(normalizedPhi(v1.phi()-v2.phi()))
+                    deltaPhi = wRLeadingVector.Phi() - wRTrailingVector.Phi()
+                    wRDiscriminator = abs(normalizedPhi(deltaPhi))
+            self.fillBinnedHist("nJets", binInfo, nJets)
+            if nAmbiguous:
+                self.fillBinnedHist("nAmbiguous", binInfo, nAmbiguous)
+            self.fillBinnedHist("nPV", binInfo, vertices, PUWeight )    
+            self.fillBinnedHist("nPVnoPU", binInfo, vertices, 1 )    
+            self.fillBinnedHist("lepEta" , binInfo, lepEtas[0], PUWeight )
+            self.fillBinnedHist("lepPt" , binInfo, lepPts[0], PUWeight )
+            if sumE != 0.0:
+                self.fillBinnedHist("centrality" , binInfo, sumEt / sumE, PUWeight )
+            if nJets > 1:
+                self.fillBinnedHist("dPhi2JetMET" , binInfo, dPhi2JetMET, PUWeight )
+            self.fillBinnedHist("sumEt" , binInfo, sumEt, PUWeight )
+            self.fillBinnedHist("MET" , binInfo, metRaw, PUWeight )
+            self.fillBinnedHist("wMT" , binInfo, wMT, PUWeight )
+            self.fillBinnedHist("hT" , binInfo, hT, PUWeight )
+            if leadingBJet:
+                self.fillBinnedHist("std" , binInfo, singleTopDiscriminator, PUWeight )
+                self.fillBinnedHist("stdt" , binInfo, singleTopDiscriminatorT, PUWeight )
+                if leadingLightJet:
+                    self.fillBinnedHist("wrp" , binInfo, wRDiscriminator, PUWeight )
 
 
 class SHyFTEventInfo:
@@ -459,10 +587,11 @@ class ROOTEventInfo(SHyFTEventInfo):
         self.puDataIntegral = self.puDataHist.Integral()
         self.puInfoLabel = ("addPileupInfo")
         self.puInfoHandle = Handle("std::vector<PileupSummaryInfo>")
-        self.vertH = Handle("std::vector<reco::Vertex>")
-        self.vertLabel = ("offlinePrimaryVertices")
+        self.vertH = Handle("int")
+        self.vertLabel = ("pfShyftProducer" + lepStr +  postfix ,"genpv")
         
         self.varLookup = {}
+        self.varLookup['tauPts'] = (self.jetTauPtLabel, self.jetTauPtHandle)
         self.varLookup['muPt'] = (self.muonPtLabel, self.muonPtHandle)
         self.varLookup['elePt'] = (self.electronPtLabel, self.electronPtHandle)
         self.varLookup['puInfo'] = (self.puInfoLabel, self.puInfoHandle)
@@ -488,9 +617,7 @@ class ROOTEventInfo(SHyFTEventInfo):
 
     def getByTitle(self, title):
         if title in self.eventCache:
-            print "cache hit %s" % [(self.varLookup[title])]
             return self.eventCache[title]
-        print "getting %s" % [(self.varLookup[title])]
         self.event.getByLabel(*self.varLookup[title])
         if self.varLookup[title][1].isValid():
             product = self.varLookup[title][1].product()
@@ -500,7 +627,6 @@ class ROOTEventInfo(SHyFTEventInfo):
         return product
 
     def resetHandles(self):
-        print "resetting cache"
         self.eventCache = {}
 # helper function from c++
 def normalizedPhi(phi):
@@ -547,6 +673,12 @@ def getParser(default=None):
                       dest='noMET',
                       help='no MET cut')
 
+    # invertTauCut
+    parser.add_option('--invertTauCut', metavar='F', action='store_true',
+                      default=False if default else None,
+                      dest='invertTauCut',
+                      help='Reverses tau discriminator cut')
+
     # Using data or not. For MC, truth information is accessed.
     parser.add_option('--useData', metavar='F', action='store_true',
                       default=False if default else None,
@@ -564,6 +696,12 @@ def getParser(default=None):
                       default='nominal' if default else None,
                       dest='lftagSys',
                       help='LFTag Systematic variation. Options are "nominal, up, down, up2, down2"')
+
+    # JEC systematics
+    parser.add_option('--jecSys', metavar='F', type='string', action='store',
+                      default='nominal' if default else None,
+                      dest='jecSys',
+                      help='JEC Systematic variation. Options are "nominal, up, down"')
 
     #Min Jets
     parser.add_option('--minJets', metavar='F', type='int', action='store',
@@ -594,6 +732,18 @@ def getParser(default=None):
                       dest='puMCInput',
                       help='Input MC PU distribution')
 
+    parser.add_option('--metMin', metavar='P', type='string', action='store',
+                      default=20 if default else None,
+                      dest='metMin',
+                      help='Met cut (GeV)')
+
+    parser.add_option('--flipTauOrder', metavar='P', type='string', action='store',
+                      default=False if default else None,
+                      dest='flipTauOrder',
+                      help='Flip the order of testing for taus and jets')
+
+
+
     return parser
 
 analyzerList = []
@@ -606,13 +756,57 @@ if len(splitArgs) == 1:
     parser = getParser(default = True)
     (options, args) = parser.parse_args(splitArgs[0])
     argList = [[options, args]]
+    # Per-jet scale factors:
+    sfB = 1.00
+    sfC = 1.00
+    sfQ = 1.00
+    if options.btagSys == 'up':
+        sfB = 1.10
+        sfC = 1.10
+    elif options.btagSys == 'down':
+        sfB = 0.90
+        sfC = 0.90
+    elif options.btagSys == 'up2':
+        sfB = 1.20
+        sfC = 1.20
+    elif options.btagSys == 'down2':
+        sfB = 0.80
+        sfC = 0.80
+        
+    if options.lftagSys == 'up':
+        sfQ = 1.10
+    elif options.lftagSys == 'down':
+        sfQ = 0.90
+    elif options.lftagSys == 'up2':
+        sfQ = 1.20
+    elif options.lftagSys == 'down2':
+        sfQ = 0.80
+
+    # JEC scales
+    jecScale = 0.0
+    if options.jecSys == 'up':
+        jecScale = 1.0
+    elif options.jecSys == 'down':
+        jecScale = -1.0
+
+
     analyzerList.append(FWLiteAnalysis(outputFile=options.outname,
-                                       isData=options.useData))
+                                       isData=options.useData,
+                                       noMET=options.noMET,
+                                       metMin=options.metMin,
+                                       flipTauOrder=options.flipTauOrder,
+                                       jetPt=options.jetPt,
+                                       invertTauCut=options.invertTauCut,
+                                       sfB = sfB,
+                                       sfC = sfC,
+                                       sfQ = sfQ,
+                                       jecScale = jecScale))
     eventWrapperList.append(ROOTEventInfo(lepStr='Mu',
                                             postfix='',
                                             puMCInput=options.puMCInput,
                                             puDataInput=options.puDataInput))
 else:
+    raise Exception, "This doesn't work"
     argList = []
     parser = getParser(default = True)
     (mainOptions, mainArgs) = parser.parse_args(splitArgs[0])
@@ -633,7 +827,13 @@ else:
         if subOptions.outname in outNames:
             raise RuntimeError, "Two iterations are writing to same output"
         outNames.append(subOptions.outname)
-        analyzerList.append(FWLiteAnalysis(outputFile=optCopy.outname, isData=optCopy.useData))
+        analyzerList.append(FWLiteAnalysis(outputFile=optCopy.outname,
+                                            isData=optCopy.useData,
+                                            noMET=optCopy.noMET,
+                                            metMin=optCopy.metMin,
+                                            flipTauOrder=optCopy.flipTauOrder,
+                                            jetPt=options.jetPt,
+                                            invertTauCut=optCopy.invertTauCut))
         eventWrapperList.append(ROOTEventInfo(lepStr='mu',
                                             postfix='',
                                             puMCInput=optCopy.puMCInput,
