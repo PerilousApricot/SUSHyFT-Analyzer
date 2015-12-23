@@ -1,26 +1,21 @@
 import FWCore.ParameterSet.Config as cms
 
-#from PhysicsTools.SelectorUtils.pvSelector_cfi import pvSelector as pvSel
-from PhysicsTools.SelectorUtils.pvSelector_cfi import pvSelector
-from PhysicsTools.SelectorUtils.pfMuonSelector_cfi import pfMuonSelector
-from PhysicsTools.SelectorUtils.pfElectronSelector_cfi import pfElectronSelector
 from Analysis.SHyFT.cutbasedIDSelector_cfi import cutbasedIDSelector
 
 wplusjetsAnalysis = cms.PSet(
     
     electronIdVeto = cutbasedIDSelector.clone(
-    version = cms.string('VETO')
+        version = cms.string('VETO')
     ),
     
     # Primary vertex
     pvSelector = cms.PSet(
-    pvSrc = cms.InputTag('offlinePrimaryVertices'),
-    minNdof = cms.double(4.0),
-    maxZ = cms.double(24.0),
-    maxRho = cms.double(2.0),
-    NPV = cms.int32(1),
+        pvSrc = cms.InputTag('offlinePrimaryVertices'),
+        minNdof = cms.double(4.0),
+        maxZ = cms.double(24.0),
+        maxRho = cms.double(2.0),
+        NPV = cms.int32(1),
     ),
-    
     # input parameter sets
     muonSrc = cms.InputTag('selectedPatMuonsPFlow'),
     electronSrc = cms.InputTag('selectedPatElectronsPFlow'),
@@ -69,11 +64,12 @@ wplusjetsAnalysis = cms.PSet(
     useData        = cms.bool(False),
     pfCandidateMap = cms.InputTag('particleFlow:electrons'),
     jecPayloads    = cms.vstring([
-    'Jec12_V2_L1FastJet_AK5PFchs.txt',
-    'Jec12_V2_L2Relative_AK5PFchs.txt',
-    'Jec12_V2_L3Absolute_AK5PFchs.txt',
-    'Jec12_V2_L2L3Residual_AK5PFchs.txt',
-    'Jec12_V2_Uncertainty_AK5PFchs.txt', ])
-   
-    #jecPayload     = cms.string('Jec12_V2_AK5PFchs_Uncertainty.txt')
+                                    'Jec12_V2_L1FastJet_AK5PFchs.txt',
+                                    'Jec12_V2_L2Relative_AK5PFchs.txt',
+                                    'Jec12_V2_L3Absolute_AK5PFchs.txt',
+                                    'Jec12_V2_L2L3Residual_AK5PFchs.txt',
+                                    'Jec12_V2_Uncertainty_AK5PFchs.txt', 
+                                 ]),
+    puDataFileName = cms.string('pudata_scale.root'),
+    puMCFileName = cms.string('pumc_scale.root'),
 )

@@ -51,7 +51,7 @@ options.register('eleTriggerName',
                  "trigger to run for ele paths")
 
 options.register('muTriggerName',
-                 'HLT_IsoMu24_eta2p1_v',
+                 'HLT_IsoMu24_eta2p1_v,HLT_Mu30_eta2p1_v,HLT_Mu40_eta2p1_v',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.string,
                  "trigger to run for muon paths")
@@ -96,8 +96,7 @@ process.mvaID = cms.Sequence(  process.mvaTrigV0 + process.mvaNonTrigV0 )
 #process.load( "PhysicsTools.PatAlgos.patSequences_cff" )
 #from PhysicsTools.PatAlgos.patEventContent_cff import *
 
-inputCutsToIgnore = ["== 1 Tight Lepton","== 1 Lepton","Dilepton Veto"]
-useData = True
+inputCutsToIgnore = ["== 1 Tight Lepton","== 1 Lepton","Dilepton Veto","== 1 Tight Lepton, Mu Veto"]
 if options.useData == 0 :
     useData = False
     #inputCutsToIgnore = ['Trigger']
@@ -110,6 +109,7 @@ if options.useData == 0 :
         'Jec12_V3_MC_Uncertainty_AK5PFchs.txt',
         ]
 else:
+    useData = True
     process.GlobalTag.globaltag = 'GR_P_V40_AN1::All'
     payloads = [
         'Jec12_V3_L1FastJet_AK5PFchs.txt',
@@ -126,16 +126,29 @@ else:
 
 process.load("Configuration.StandardSequences.MagneticField_cff")
 
-import sys
-
 if useData:
     inputFiles = [
             '/store/user/meloam/SingleMu/meloam_feb12_tlbsm53x2_Run2012C_24Aug2012_v1/20130212222033/00000/4463A7D0-9075-E211-95CC-003048F2E8C2.root'
         ]
-
 else :
     inputFiles = [
-            '/store/user/gurrola/W2JetsToLNu_TuneZ2Star_8TeV-madgraph/W2JetsToLNu_SkimPat/405381fe00d9112adafce059de4ce799/skimPat_1001_1_nnH.root'
+            '/store/user/gurrola/DY4JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/DY4JetsToLL_M-50_SkimPat/405381fe00d9112adafce059de4ce799/skimPat_1000_1_GJN.root',
+#'file:///scratch/meloam/SUSHyFT-Scripts/checkouts/pat/src/HighMassAnalysis/Configuration/test/Data_TauTauSkim/skimPat.root']
+ #   nothingFiles=[
+'/store/user/meloam/ra2tau_pat_8TeV/DY4JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014400/0000/skimPat_1.root',
+'/store/user/gurrola/DY1JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/DY1JetsToLL_M-50_SkimPat/405381fe00d9112adafce059de4ce799/skimPat_752_1_I91.root',
+'/store/user/meloam/ra2tau_pat_8TeV/DY2JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014310/0000/skimPat_101.root',
+'/store/user/meloam/ra2tau_pat_8TeV/DY2JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014310/0000/skimPat_102.root',
+'/store/user/meloam/ra2tau_pat_8TeV/DY2JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014310/0000/skimPat_103.root',
+'/store/user/meloam/ra2tau_pat_8TeV/DY2JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014310/0000/skimPat_104.root',
+'/store/user/meloam/ra2tau_pat_8TeV/DY2JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014310/0000/skimPat_105.root',
+'/store/user/meloam/ra2tau_pat_8TeV/DY2JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014310/0000/skimPat_106.root',
+'/store/user/meloam/ra2tau_pat_8TeV/DY2JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014310/0000/skimPat_107.root',
+'/store/user/meloam/ra2tau_pat_8TeV/DY2JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014310/0000/skimPat_108.root',
+'/store/user/meloam/ra2tau_pat_8TeV/DY2JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014310/0000/skimPat_109.root',
+            #'file:///scratch/meloam/SUSHyFT-Scripts/checkouts/pat/src/HighMassAnalysis/Configuration/test/Data_TauTauSkim/skimPat.root',
+            #'/store/user/flanagwh/TTJets_MassiveBinDECAY_TuneZ2star_8TeV-madgraph-tauola/5_3_11_patch6_Vandy/405381fe00d9112adafce059de4ce799/skimPat_100_2_05a.root'
+            #'/store/user/gurrola/W2JetsToLNu_TuneZ2Star_8TeV-madgraph/W2JetsToLNu_SkimPat/405381fe00d9112adafce059de4ce799/skimPat_1001_1_nnH.root'
             #'root://se8.accre.vanderbilt.edu:1095//store/user/flanagwh/TTJets_MassiveBinDECAY_TuneZ2star_8TeV-madgraph-tauola/5_3_11_patch6_Vandy/405381fe00d9112adafce059de4ce799/skimPat_688_3_e0l.root',
             #'root://xrootd.unl.edu//store/user/lpctlbsm/meloam/GJets_HT-200To400_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3/99bd99199697666ff01397dad5652e9e/tlbsm_53x_v3_mc_425_1_CX2.root'
         ]
@@ -149,7 +162,7 @@ if len(options.inputFiles) > 0 :
 
 
 ## Maximal Number of Events
-#process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(2000) )
+process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(2000) )
 
 from Analysis.SHyFT.shyftselection_cfi import wplusjetsAnalysis as shyftSelectionInput
 
@@ -215,7 +228,7 @@ process.pfShyftTupleJetsMu = cms.EDProducer(
             ),
         cms.PSet(
             tag = cms.untracked.string("secvtxMass"),
-            quantity = cms.untracked.string("userFloat('secvtxMass')")
+            quantity = cms.untracked.string("userFloat('secvtxMass')"),
             ),
         cms.PSet(
             tag = cms.untracked.string("jetArea"),
@@ -264,7 +277,7 @@ process.pfShyftTupleJetsMu = cms.EDProducer(
         )
     )
 
-if not options.useData :
+if not options.useData:
     process.pfShyftTupleJetsMu.variables.append(
         cms.PSet(
             tag = cms.untracked.string("flavor"),
@@ -275,6 +288,38 @@ if not options.useData :
 process.pfShyftTupleMuons = cms.EDProducer(
     "CandViewNtpProducer",
     src = cms.InputTag("pfShyftProducerMu", "muons"),
+    lazyParser = cms.untracked.bool(True),
+    eventInfo = cms.untracked.bool(False),
+    variables = cms.VPSet(
+        cms.PSet(
+            tag = cms.untracked.string("tight"),
+            quantity = cms.untracked.string("userInt('isTight')")
+        ),
+        cms.PSet(
+            tag = cms.untracked.string("pt"),
+            quantity = cms.untracked.string("pt")
+            ),
+        cms.PSet(
+            tag = cms.untracked.string("eta"),
+            quantity = cms.untracked.string("eta")
+            ),
+        cms.PSet(
+            tag = cms.untracked.string("phi"),
+            quantity = cms.untracked.string("phi")
+            ),
+        cms.PSet(
+            tag = cms.untracked.string("pfiso"),
+            quantity = cms.untracked.string("userIsolation('pat::PfChargedHadronIso') + " +
+                                            "userIsolation('pat::PfNeutralHadronIso') + " +
+                                            "userIsolation('pat::PfGammaIso')"
+                                            )
+            ),
+        )
+    )
+
+process.pfShyftTupleElectrons = cms.EDProducer(
+    "CandViewNtpProducer",
+    src = cms.InputTag("pfShyftProducerMu", "electrons"),
     lazyParser = cms.untracked.bool(True),
     eventInfo = cms.untracked.bool(False),
     variables = cms.VPSet(
@@ -300,6 +345,7 @@ process.pfShyftTupleMuons = cms.EDProducer(
         )
     )
 
+
 process.pfShyftTupleMETMu = cms.EDProducer(
     "CandViewNtpProducer",
     src = cms.InputTag("pfShyftProducerMu", "MET"),
@@ -324,6 +370,7 @@ if options.runMuons:
         process.pfShyftProducerMu*
         process.pfShyftTupleJetsMu*
         process.pfShyftTupleMuons*
+        process.pfShyftTupleElectrons*
         process.pfShyftTupleMETMu
         #process.pfShyftTupleTausMu
         )
@@ -335,18 +382,12 @@ process.out = cms.OutputModule("PoolOutputModule",
                                fileName = cms.untracked.string("shyft_edntuple.root"),
                                SelectEvents   = cms.untracked.PSet( SelectEvents = cms.vstring('p1') ),
                                outputCommands = cms.untracked.vstring('drop *',
-                                                                      #'keep *',
-                                                                      #'keep *_*_pileupWeights_*',
-                                                                      #'keep *_PUNtupleDumperSingleEle_*_*',
-                                                                      #'keep *_PUNtupleDumperEleHad_*_*',
-                                                                      #'keep *_PUNtupleDumperOld_*_*',
+                                                                      'keep *_*_genpv_*',
                                                                       'keep *_*_pileUp_*',
-                                                                      'keep *_addPileupInfo_*_*',
                                                                       'keep *_pfShyftTuple*_*_*',
                                                                       'keep *_pdfWeightProducer_*_*',
-                                                                      'keep PileupSummaryInfos_*_*_*',
-                                                                      'keep *_offlinePrimaryVertices_*_*',
                                                                       'keep *_patTriggerEvent_*_*',
+                                                                      'keep edmTriggerResults_TriggerResults__HLT',
                                                                       'keep patTriggerPaths_patTrigger_*_*'
                                                                       )
                                )

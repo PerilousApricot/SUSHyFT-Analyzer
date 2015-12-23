@@ -318,7 +318,6 @@ bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & 
                 passVetoID = electronIdVeto_(*ielectron,event);//WP:"Veto" from cut based ID
 
                 if(passTopCuts && passIso && passMVAID){
-
                     selectedElectrons_.push_back( reco::ShallowClonePtrCandidate( edm::Ptr<pat::Electron>( electronHandle, ielectron - electronBegin ) ) );
                 }
                 else if(passVetoID && et > 20.0){
@@ -357,7 +356,8 @@ bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & 
                 bool passLoose = imuon->isPFMuon() && ( imuon->isGlobalMuon() || imuon->isTrackerMuon() );
 
                 if ( imuon->pt() > muPtMin_ && fabs(imuon->eta()) < muEtaMax_ && passLoose && passIso ) {
-                   selectedMuons_.push_back( reco::ShallowClonePtrCandidate( edm::Ptr<pat::Muon>( muonHandle, imuon - muonBegin ) ) );
+                    //bool passTight = imuon->isTightMuon(primVtxHandle->at(0));
+                    selectedMuons_.push_back( reco::ShallowClonePtrCandidate( edm::Ptr<pat::Muon>( muonHandle, imuon - muonBegin ) ) );
                 } else {
                     // Loose cuts : currently the same passLoose is applied but pt and iso can be different.
                    if ( imuon->pt() > muPtMinLoose_ && fabs(imuon->eta()) < muEtaMaxLoose_ && passLoose && relIso < 0.2) {
@@ -727,8 +727,10 @@ bool SHyFTSelector::operator() ( edm::EventBase const & event, pat::strbitset & 
         double mcVal = puMCHist_->GetBinContent(mcBin);
         double dataVal = puDataHist_->GetBinContent(dataBin);
         puWeight_ = (dataVal * mcIntegral) / (mcVal * dataIntegral);
+        genPV_ = nVertices;
     } else {
         puWeight_ = 1.0;
+        genPV_ = 1;
     }
     setIgnored(ret);
     return (bool)ret;

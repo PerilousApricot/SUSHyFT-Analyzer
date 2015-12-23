@@ -20,6 +20,7 @@ class EDSHyFTSelector : public edm::FilterWrapper<SHyFTSelector> {
       produces< std::vector<pat::Electron> > ("electrons");
       produces< std::vector<pat::Tau> >  ("taus");
       produces<float>("pileUp");
+      produces<int>("genpv");
     };
      
   virtual ~EDSHyFTSelector() {}

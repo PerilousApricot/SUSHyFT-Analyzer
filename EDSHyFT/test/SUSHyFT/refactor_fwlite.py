@@ -31,6 +31,7 @@ class FWLiteAnalysis:
                         muPtMin = 35,
                         isData = False,
                         noMET = False,
+                        lowMET = False,
                         metMin = 20,
                         flipTauOrder = False,
                         jetPt = 35,
@@ -38,7 +39,11 @@ class FWLiteAnalysis:
                         jecScale = 0.0,
                         sfB = 1.0,
                         sfC = 1.0,
-                        sfQ = 1.0):
+                        sfQ = 1.0,
+                        sfTau = 1.0,
+                        wMTCut = None,
+                        jesScale = 1.0,
+                        sfNotTau = 1.0):
         self.simpleHists = {}
         self.binnedHists = {}
         self.maxJets = maxJets
@@ -52,6 +57,7 @@ class FWLiteAnalysis:
         self.bTagCut = 0.678
         self.tTagCut = 0.5
         self.ignoreMet = noMET
+        self.lowMet = lowMET
         self.invertTauCut = invertTauCut
         self.flipTauOrder = flipTauOrder
         # stupid global variables
@@ -64,7 +70,11 @@ class FWLiteAnalysis:
         self.sfB = sfB
         self.sfC = sfC
         self.sfQ = sfQ
+        self.sfTau = sfTau
+        self.sfNotTau = sfNotTau
         self.jecScale = jecScale
+        self.jesScale = jesScale
+        self.wMTCut = wMTCut
         if self.isData:
             self.flavorNames = [""]
         else:
@@ -114,6 +124,9 @@ class FWLiteAnalysis:
             raise
 
     def fillBinnedHist(self, name, binInfo, value, weight = 1.0):
+        if weight < 0:
+            raise RuntimeError, "Negative pileup weight?: %f" % weight
+
         self.getBin(binInfo)[name].Fill(value, weight)
 
     def getSuffix(self, binInfo):
@@ -127,7 +140,20 @@ class FWLiteAnalysis:
     def makeHistograms(self):
         p = [
              ["nEvents", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nEventsPassAll", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nEventsPass2", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nEventsPass3", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nEventsPass4", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
              ["nEventsNoPU", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nEventsPassWMT", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nEventsPassMET", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nEventsPassLepton", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nEventsPassJets", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nJetsPassing", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nJetsJESFailed", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nJetsJESPassed", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nEventsJESFailedMET", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nEventsJESPassedMET", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
             ]
         for plot in p:
             self.addSimpleHist(*plot)
@@ -139,6 +165,9 @@ class FWLiteAnalysis:
                  'centrality',
                  'sumEt',
                  'MET',
+                 'MET2Mu',
+                 'MET3Mu',
+                 'MET4Mu',
                  'wMT',
                  'hT',
                  'std',
@@ -149,9 +178,12 @@ class FWLiteAnalysis:
                  'dPhi2JetMET',
                  'mTLeadMuoMET',
                  '2MuonInvMass',
+                 '3MuonInvMass',
+                 '4MuonInvMass',
                  'gt2MuonInvMass',
                  'nMuon',
-                 'nElectron']
+                 'nElectron',
+                 'ssv']
         titles = ['number of Primary Vertices',
                   'number of Primary Vertices no PileUp',
                   'Lepton #eta',
@@ -159,6 +191,9 @@ class FWLiteAnalysis:
                   'Centrality',
                   '#sum E_{T}',
                   'MET',
+                  'MET mu #eq 2',
+                  'MET mu #eq 3',
+                  'MET mu #eq 4',
                   'M_{WT}',
                   'hT',
                   "SingleTopDisc",
@@ -169,9 +204,12 @@ class FWLiteAnalysis:
                   'dPhi between 2nd Jet and MET',
                   'mT_{lead muon, MET}',
                   'invariant mass, 2 muons',
+                  'invariant mass, 3 muons',
+                  'invariant mass, 4 muons',
                   'invariant mass, #gt muons'
                   'nMuons #gt 10GeV',
-                  'nElectrons #gt 10GeV']
+                  'nElectrons #gt 10GeV',
+                  'Secondary Vertex Mass']
         bounds = [  [40, -0.5, 39.5], #npv
                     [40,-0.5,39.5], # npbnopu
                     [30,0.,3.0], #lepeta
@@ -179,6 +217,9 @@ class FWLiteAnalysis:
                     [120,0.,1.2], # centrality
                     [100,0.,1000.], # sumEt
                     [300,0.,300.], # MET
+                    [300,0.,300.], # MET 2mu
+                    [300,0.,300.], # MET 3mu
+                    [300,0.,300.], # MET 4mu
                     [120,0.,300.], # wmt
                     [120,0.,1200.], #ht
                     [240,0.,600.], #std
@@ -188,10 +229,13 @@ class FWLiteAnalysis:
                     [10,-0.5,10.5], # njet
                     [136,-3.4,3.4], #dphi jet met
                     [200,0,400], # mt
-                    [100,0,200], # inv mass
+                    [100,0,200], # 2 muon inv mass
+                    [100,0,200], # 3 muon inv mass
+                    [100,0,200], # 4 muon inv mass
                     [150,0,300], # gt2 muon mass
                     [10,-0.5,10.5],
                     [10,-0.5,10.5],
+                    [100,0.0,10.0],
                 ]
         for plot in itertools.izip(names,titles,bounds):
             self.addBinnedHist(plot[0],plot[1],*plot[2])
@@ -208,7 +252,7 @@ class FWLiteAnalysis:
             mcWeight = event.puMCHist.GetBinContent(
                                         event.puMCHist.GetBin(nPV + 1))
             if mcWeight * event.puDataIntegral == 0:
-                PUWeight = 1
+                PUWeight = 1.0
             else:
                 # I wonder if there's a float-only division operator
                 PUWeight = float( float(dataWeight * event.puMCIntegral) /
@@ -220,18 +264,20 @@ class FWLiteAnalysis:
     def handleLepton(self, event, lepStr, minPt):
         lepCount = 0
         lepPts = event.getByTitle(lepStr + 'Pt')
-        if not lepPts:
-            return 0
-        for lepPt in lepPts:
-            if lepPt > minPt:
+        lepEtas = event.getByTitle("lepEtas")
+        if not lepPts or not lepEtas:
+            raise RuntimeError, "can't get PT or eta"
+        for lepPt, lepEta in itertools.izip(lepPts, lepEtas):
+            if lepPt > minPt and abs(lepEta) < 2.1:
                 lepCount += 1
         return lepCount
     
     def leptonCut(self, event):
          # Always require exactly one muon. future should be different leps.
-        eleCount = self.handleLepton(event, "ele", 35)
+        eleCount = self.handleLepton(event, "ele", 20)
         muonCount = self.handleLepton(event, "mu", 35)
-        return muonCount != 1 or eleCount != 0
+        smallMuonCount = self.handleLepton(event, "mu", 10)
+        return muonCount != 1 or eleCount != 0 or smallMuonCount > 1
 
     def metCut(self, event):
         if self.ignoreMet:
@@ -239,7 +285,10 @@ class FWLiteAnalysis:
         rawMet = event.getByTitle('metPt')
         if not rawMet:
             return True
-        return rawMet[0] <= self.metMin
+        if not self.lowMet:
+            return rawMet[0] <= self.metMin
+        else:
+            return rawMet[0] >= self.metMin
 
     def shouldCut(self, event):
         # TODO: Calibrate what is the ideal cut-order from the first few events
@@ -267,10 +316,18 @@ class FWLiteAnalysis:
         nAmbiguous = 0
         bTagIndices = []
         for index, jetPt in enumerate(jetPts):
-            if jetPt < self.jetPtMin:
+            if (jetPt * self.jesScale) < self.jetPtMin:
+                if jetPt >= self.jetPtMin:
+                    # We failed the jet because of JES
+                    self.fillSimpleHist("nJetsJESFailed", 1, 1)
                 continue
-            if nJets >= self.maxJets:
-                break
+            if jetPt < self.jetPtMin:
+                # We passed the jet only due to the JES
+                self.fillSimpleHist("nJetsJESPassed", 1, 1)
+
+            self.fillSimpleHist("nJetsPassing", 1, 1)
+            #if nJets >= self.maxJets:
+            #    break
             nJets += 1
             # Here if something is both a B-jet and a Tau, I call it B. Okay?
             passB = jetBDiscs[index] > self.bTagCut
@@ -292,15 +349,20 @@ class FWLiteAnalysis:
         assert (nTTags + nBTags) <= nJets, "Don't double-count events"
         return nJets, nBTags, nTTags, nAmbiguous, bTagIndices
 
+    def metPasses(self, met):
+        if self.ignoreMet:
+            return True
+        if not self.lowMet:
+            return met >= self.metMin
+        else:
+            return met <= self.metMin
+
+
     def processEvent(self, event):
         PUWeight = self.getPUWeight(event)
-        self.fillSimpleHist("nEvents", 1, PUWeight)
-        self.fillSimpleHist("nEventsNoPU", 1, 1.0)
-        if self.metCut(event):
-            return
+        self.fillSimpleHist("nEvents", 1, 1)
 
         nJets, nBTags, nTTags, nAmbiguous, bTagIndices = self.countJets(event)
-        # get necessary kinematics
         if self.isData:
             eventFlavor = 0
         else:
@@ -310,9 +372,12 @@ class FWLiteAnalysis:
         nBTags = min(nBTags, self.maxBJets)
         bTagIndices = bTagIndices[0:nBTags]
         nTTags = min(nTTags, self.maxTaus)
-        binInfo = (nJets, nBTags, nTTags, eventFlavor)
-        eleCount2Mu = self.handleLepton(event, "ele", 10)
-        muonCount2Mu = self.handleLepton(event, "mu", 10)
+        if nBTags + nTTags > nJets:
+            nTTags = nJets - nBTags
+        binInfo = [nJets, nBTags, nTTags, eventFlavor]
+        eleCount2Mu = self.handleLepton(event, "ele", 15)
+        muonCount30Gev = self.handleLepton(event, "mu", 35)
+        muonCount2Mu = self.handleLepton(event, "mu", 15)
         lepPts = event.getByTitle("lepPts")
         lepEtas = event.getByTitle("lepEtas")
         lepPhis = event.getByTitle("lepPhis")
@@ -331,14 +396,17 @@ class FWLiteAnalysis:
                                     lepPhis[1],
                                     lepMass)
 
-            self.fillBinnedHist("2MuonInvMass", binInfo, (lepVector + lepVector2).M(), PUWeight )    
+            #self.fillBinnedHist("2MuonInvMass", binInfo, (lepVector + lepVector2).M(), PUWeight )    
+    
 
-        if (eleCount2Mu == 0 and muonCount2Mu > 2):
-            f = math.factorial
-            n = muonCount2Mu
-            r = 2
-            nCr = f(n) / f(r) / f(n-r)
-            for x,y in itertools.combinations(range(muonCount2Mu), 2):
+
+        metRaw = event.getByTitle("metPt")[0]
+        nonJESMET = metRaw
+        if (muonCount30Gev >= 1 and eleCount2Mu == 0 and muonCount2Mu >= 2 and self.metPasses(metRaw)):
+            lepCombinations = itertools.combinations(range(muonCount2Mu), 2)
+            currCloseValue = 0
+            currCloseDistance = 999999
+            for x,y in lepCombinations:
                 lepVector1 = ROOT.TLorentzVector()
                 lepVector1.SetPtEtaPhiM(lepPts[x],
                                         lepEtas[x],
@@ -349,13 +417,58 @@ class FWLiteAnalysis:
                                         lepEtas[y],
                                         lepPhis[y],
                                         lepMass)
-                self.fillBinnedHist("gt2MuonInvMass", binInfo,
-                                        (lepVector1 + lepVector2).M(),
-                                        float(PUWeight)/ float(nCr) )
+                invMass = (lepVector1 + lepVector2).M()
+                zMass = 91.1876 # GeV
+                if abs(zMass - invMass) < abs(currCloseDistance):
+                    currCloseDistance = abs(zMass - invMass)
+                    currCloseValue = invMass
 
+            if muonCount2Mu > 2:
+                self.fillBinnedHist("gt2MuonInvMass", binInfo,
+                                    currCloseValue,
+                                    PUWeight)
+            if muonCount2Mu == 2:
+                self.fillSimpleHist("nEventsPass2", 1, 1)
+                self.fillBinnedHist("2MuonInvMass", binInfo,
+                                    currCloseValue,
+                                    PUWeight)
+                self.fillBinnedHist("MET2Mu", binInfo,
+                                    metRaw,
+                                    PUWeight)
+
+
+            if muonCount2Mu == 3:
+                self.fillSimpleHist("nEventsPass3", 1, 1)
+                self.fillBinnedHist("3MuonInvMass", binInfo,
+                                    currCloseValue,
+                                    PUWeight)
+                self.fillBinnedHist("MET3Mu", binInfo,
+                                    metRaw,
+                                    PUWeight)
+
+
+            if muonCount2Mu == 4:
+                self.fillSimpleHist("nEventsPass4", 1, 1)
+                self.fillBinnedHist("4MuonInvMass", binInfo,
+                                    currCloseValue,
+                                    PUWeight)
+                self.fillBinnedHist("MET4Mu", binInfo,
+                                    metRaw,
+                                    PUWeight)
+
+
+
+
+        if nJets == 0:
+            return
+        self.fillSimpleHist("nEventsPassJets", 1, 1)
         # Cut the main kinematic plots
         if self.leptonCut(event):
             return
+
+        self.fillSimpleHist("nEventsPassLepton", 1, 1)
+
+
         # Get kinematics
         metRaw = event.getByTitle("metPt")[0]
         metPhi = event.getByTitle("metPhi")[0]
@@ -384,6 +497,7 @@ class FWLiteAnalysis:
         isf = 1.0
         hT = 0.0
         effs = []
+        maxSSVMass = 0.0
         for ijet, jetPt in enumerate(jetPts):
             ## get the jet 4-vector
             thisJet = ROOT.TLorentzVector()
@@ -395,29 +509,51 @@ class FWLiteAnalysis:
             if not self.isData and self.jecScale != 0.0:
                 # Subtract the jet from the met, correct the jet then replace
                 # it
+                upOrDown = bool(jecScale > 0.0)
                 jecUnc.setJetEta( jetEtas[ijet] )
                 jecUnc.setJetPt( jetPts[ijet] )
-                upOrDown = bool(jecScale > 0.0)
-                unc = abs(jecUnc.getUncertainty(upOrDown))
+                unc1 = abs(jecUnc.getUncertainty(upOrDown))
+                # 0.0 is flat jec
+                unc2 = 0.0
+                unc = math.sqrt(unc1*unc1 + unc2*unc2)
+                #print 'Correction = ' + str( 1 + unc * jecScale)
                 jetScale = 1 + unc * jecScale
+
+
                 met_px += thisJet.Px()
                 met_py += thisJet.Py()
                 thisJet *= jetScale
                 met_px -= thisJet.Px()
                 met_py -= thisJet.Py()
 
+            if not self.isData:
+                old_px = thisJet.Px()
+                met_px += thisJet.Px()
+                met_py += thisJet.Py()
+                thisJet *= self.jesScale
+                met_px -= thisJet.Px()
+                met_py -= thisJet.Py()
+                if self.jesScale == 1.0:
+                    assert (old_px == thisJet.Px())
+
+            if thisJet.Pt() < self.jetPtMin:
+                continue
+
             # Track btag/lftag systematic
             if not self.isData:
                 jetFlavor = jetFlavors[ijet]
                 if abs(jetFlavor) == 5:
+                    # b-quark
                     eventFlavor = 0
                     iflavor = 0
                     isf = self.sfB
                 elif abs(jetFlavor) == 4:
+                    # c-quark
                     eventFlavor = min(eventFlavor, 1)
                     isf = self.sfC
                     iflavor = 1
                 else:
+                    # light-quark
                     eventFlavor = min(eventFlavor, 2)
                     isf = self.sfQ
                     iflavor = 2
@@ -435,6 +571,7 @@ class FWLiteAnalysis:
             sumEt += thisJet.Et()
             sumPt += thisJet.Pt()
             sumE  += thisJet.E()
+            # maxSSVMass = max(maxSSVMass, jetSSV[ijet])
 
             if ijet in bTagIndices:
                 if jetPt > leadingBJetPt:
@@ -445,7 +582,17 @@ class FWLiteAnalysis:
                     leadingLightJet = thisJet
                     leadingLightJetPt = jetPt
 
+        # We've figured out the eventflavor, store it in the binInfo
+        binInfo[-1] = eventFlavor
+
         metRaw2 = math.sqrt(met_py*met_py + met_px*met_px)
+        if not self.metPasses(metRaw2):
+            if not self.metPasses(nonJESMET):
+                self.fillSimpleHist("nEventsJESFailedMET", 1, 1)
+            return
+        if self.metPasses(nonJESMET):
+            self.fillSimpleHist("nEventsJESPassedMET", 1, 1)
+        self.fillSimpleHist("nEventsPassMET", 1, 1)
         metPhi2 = math.atan2(met_py,met_px)
         metVector = ROOT.TLorentzVector()
         metVector.SetPtEtaPhiM(metRaw2,
@@ -458,26 +605,43 @@ class FWLiteAnalysis:
         hT += lepPts[0] + metRaw2
         wMT = math.sqrt(wPt*wPt-wPx*wPx-wPy*wPy)
 
+        if self.wMTCut == 'up':
+            if wMT < 50:
+                return
+        elif self.wMTCut == 'down':
+            if wMT > 50:
+                return
+        
+        self.fillSimpleHist("nEventsPassWMT", 1, 1)
         if not self.isData:
             effCombos = EffInfoCombinations(effs, verbose=False)
             fillList = []
+            totalCombo = 0
             for itag in range(0,nJets+1):
+                # probability that you will tag itag jets
                 pTag = effCombos.pTag( itag )
                 jtag = itag
                 if jtag > self.maxBJets:
                     jtag = self.maxBJets
                 # use pileup reweighting factor
+                totalCombo += pTag
                 pTag*=PUWeight
                 newBinInfo = list(binInfo[:])
                 newBinInfo[1] = jtag
                 # nBjet + nTjet > nJet
                 if jtag + binInfo[2] > binInfo[0]:
-                    newBinInfo[2] = 0
-                fillList.append([newBinInfo, pTag])
+                    newBinInfo[2] = binInfo[0] - jtag
+                if pTag:
+                    fillList.append([newBinInfo, pTag])
+            assert totalCombo > 0.99, "Total probability was %f" % totalCombo
+            assert totalCombo < 1.01, "Total probability was %f" % totalCombo
         else:
             fillList = [[binInfo, 1]]
         vertices = event.getByTitle("vertices")[0]
+        self.fillSimpleHist("nEventsPassAll", 1, 1)
         for binInfo, PUWeight in fillList:
+            if PUWeight < 0:
+                raise RuntimeError, "Negative pileup weight?: %f" % PUWeight
             # do the combinatorials
             if leadingBJet:
                 singleTopDiscriminatorT = (leadingBJet + lepVector + metVector).Mt()
@@ -571,6 +735,9 @@ class ROOTEventInfo(SHyFTEventInfo):
         self.electronPfisoHandle         = Handle( "std::vector<float>" )
         self.electronPfisoLabel    = ( "pfShyftTupleElectrons"+  postfix,   "pfiso" )
 
+        self.triggerHandle = Handle( "edm::TriggerResults" )
+        self.triggerLabel = ( "edmTriggerResults", "TriggerResults" )
+
         self.metHandle = Handle( "std::vector<float>" )
         self.metLabel = ("pfShyftTupleMET" + lepStr +  postfix,   "pt" )
         self.metPhiHandle = Handle( "std::vector<float>" )
@@ -606,6 +773,7 @@ class ROOTEventInfo(SHyFTEventInfo):
         self.varLookup['jetFlavors'] = (self.jetFlavorLabel, self.jetFlavorHandle)
         self.varLookup['puInfo'] = (self.puInfoLabel, self.puInfoHandle) 
         self.varLookup['vertices'] = (self.vertLabel, self.vertH)
+        self.varLookup['trigger'] = (self.triggerLabel, self.triggerHandle)
         if lepStr == 'Mu':
             self.varLookup['lepPts'] = (self.muonPtLabel, self.muonPtHandle)
             self.varLookup['lepEtas'] = (self.muonEtaLabel, self.muonEtaHandle)
@@ -673,6 +841,13 @@ def getParser(default=None):
                       dest='noMET',
                       help='no MET cut')
 
+    # no MET cut
+    parser.add_option('--lowMET', metavar='F', action='store_true',
+                      default=False if default else None,
+                      dest='lowMET',
+                      help='Invert MET cut')
+
+
     # invertTauCut
     parser.add_option('--invertTauCut', metavar='F', action='store_true',
                       default=False if default else None,
@@ -696,12 +871,31 @@ def getParser(default=None):
                       default='nominal' if default else None,
                       dest='lftagSys',
                       help='LFTag Systematic variation. Options are "nominal, up, down, up2, down2"')
+    # TauTag systematics
+    parser.add_option('--tauTagSys', metavar='F', type='string', action='store',
+                      default='nominal' if default else None,
+                      dest='tauTagSys',
+                      help='tauTag Systematic variation. Options are "nominal, up, down, up2, down2"')
+    # TauTag systematics
+    parser.add_option('--tauMistagSys', metavar='F', type='string', action='store',
+                      default='nominal' if default else None,
+                      dest='tauMistagSys',
+                      help='tauMistag Systematic variation. Options are "nominal, up, down, up2, down2"')
+
+
 
     # JEC systematics
     parser.add_option('--jecSys', metavar='F', type='string', action='store',
                       default='nominal' if default else None,
                       dest='jecSys',
                       help='JEC Systematic variation. Options are "nominal, up, down"')
+
+    # JEC systematics
+    parser.add_option('--jesSys', metavar='F', type='string', action='store',
+                      default='1.0' if default else None,
+                      dest='jesSys',
+                      help='JES Systematic variation. Option is a SF')
+
 
     #Min Jets
     parser.add_option('--minJets', metavar='F', type='int', action='store',
@@ -742,6 +936,12 @@ def getParser(default=None):
                       dest='flipTauOrder',
                       help='Flip the order of testing for taus and jets')
 
+    parser.add_option('--wMTCut', metavar='P', type='string', action='store',
+                      default=False if default else None,
+                      dest='wMTCut',
+                      help='Cut on wMT > 50GeV? (up, down, nominal')
+
+
 
 
     return parser
@@ -760,6 +960,13 @@ if len(splitArgs) == 1:
     sfB = 1.00
     sfC = 1.00
     sfQ = 1.00
+    sfTau = 1.00
+    sfNotTau = 1.00
+    jesScale = 1.00
+
+    if options.jesSys:
+        jesScale = float(options.jesSys)
+
     if options.btagSys == 'up':
         sfB = 1.10
         sfC = 1.10
@@ -782,6 +989,25 @@ if len(splitArgs) == 1:
     elif options.lftagSys == 'down2':
         sfQ = 0.80
 
+    if options.tauTagSys == 'up':
+        sfTau = 1.10
+    elif options.tauTagSys == 'down':
+        sfTau = 0.90
+    elif options.tauTagSys == 'up2':
+        sfTau = 1.20
+    elif options.tauTagSys == 'down2':
+        sfTau = 0.80
+        
+    if options.tauMistagSys == 'up':
+        sfNotTau = 1.10
+    elif options.tauMistagSys == 'down':
+        sfNotTau = 0.90
+    elif options.tauMistagSys == 'up2':
+        sfNotTau = 1.20
+    elif options.tauMistagSys == 'down2':
+        sfNotTau = 0.80
+
+
     # JEC scales
     jecScale = 0.0
     if options.jecSys == 'up':
@@ -793,16 +1019,22 @@ if len(splitArgs) == 1:
     analyzerList.append(FWLiteAnalysis(outputFile=options.outname,
                                        isData=options.useData,
                                        noMET=options.noMET,
+                                       lowMET=options.lowMET,
                                        metMin=options.metMin,
                                        flipTauOrder=options.flipTauOrder,
                                        jetPt=options.jetPt,
                                        invertTauCut=options.invertTauCut,
+                                       wMTCut = options.wMTCut,
                                        sfB = sfB,
                                        sfC = sfC,
                                        sfQ = sfQ,
-                                       jecScale = jecScale))
+                                       sfTau = sfTau,
+                                       sfNotTau = sfNotTau,
+                                       jecScale = jecScale,
+                                       jesScale = jesScale,))
     eventWrapperList.append(ROOTEventInfo(lepStr='Mu',
                                             postfix='',
+                                            #trigger='HLT_IsoMu24_eta2p1_v',
                                             puMCInput=options.puMCInput,
                                             puDataInput=options.puDataInput))
 else:

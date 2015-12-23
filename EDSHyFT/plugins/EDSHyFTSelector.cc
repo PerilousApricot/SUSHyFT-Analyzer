@@ -29,13 +29,11 @@ bool EDSHyFTSelector::filter( edm::Event & event, const edm::EventSetup& eventSe
 
     typedef std::vector<reco::ShallowClonePtrCandidate>::const_iterator clone_iter;
     typedef std::vector<edm::Ptr<pat::Tau> >::const_iterator tau_iter;
-
     for ( clone_iter ibegin = ijets.begin(), iend = ijets.end(), i = ibegin;i != iend; ++i ) {
         pat::Jet const * ijet = dynamic_cast<pat::Jet const *>( i->masterClonePtr().get() );
         jets->push_back( *ijet );
-        if (ijet->hasTagInfo("secondaryVertexTagInfos") && ijet->tagInfoSecondaryVertex("secondaryVertexTagInfos")->nVertices() > 0) {
-            jets->back().addUserFloat("secvtxMass",ijet->tagInfoSecondaryVertex("secondaryVertexTagInfos")->secondaryVertex(0).p4().mass());
-        }
+        float deltaRMin = 999.0;
+        pat::Tau const * bestTau = NULL;
         if ( ijet != 0 ) {
             // match jet object with a (potential) Tau matching it
             for ( tau_iter jbegin = itaus.begin(), jend = itaus.end(), j = jbegin; j != jend; ++j ) {
@@ -43,24 +41,34 @@ bool EDSHyFTSelector::filter( edm::Event & event, const edm::EventSetup& eventSe
                 if (jtau == 0) {
                     continue;
                 }
-                if (reco::deltaR( jtau->eta(), jtau->phi(),
-                                  ijet->eta(), ijet->phi() ) < 0.3) {
-                    jets->back().addUserFloat("tauJetPt", jtau->pt());
-                    jets->back().addUserFloat("tauJetPhi", jtau->phi());
-                    jets->back().addUserFloat("tauJetEta", jtau->eta());
-                    jets->back().addUserFloat("tauJetMass", jtau->mass());
-                    jets->back().addUserFloat("byLooseCombinedIsolationDeltaBetaCorr3Hits", jtau->tauID("byLooseCombinedIsolationDeltaBetaCorr3Hits") );
-                    jets->back().addUserInt("byMediumCombinedIsolationDeltaBetaCorr3Hits", jtau->tauID("byMediumCombinedIsolationDeltaBetaCorr3Hits"));
-                    jets->back().addUserInt("byTightCombinedIsolationDeltaBetaCorr3Hits", jtau->tauID("byTightCombinedIsolationDeltaBetaCorr3Hits"));
+                float deltaR = reco::deltaR(jtau->eta(), jtau->phi(),
+                                            ijet->eta(), ijet->phi());
+                if ((deltaRMin > deltaR) && (deltaR < 0.3)) {
+                    bestTau = jtau;
+                    deltaRMin = deltaR;
                 }
+            }
+            if (bestTau != NULL) {
+                jets->back().addUserFloat("tauJetPt", bestTau->pt());
+                jets->back().addUserFloat("tauJetPhi", bestTau->phi());
+                jets->back().addUserFloat("tauJetEta", bestTau->eta());
+                jets->back().addUserFloat("tauJetMass", bestTau->mass());
+                jets->back().addUserFloat("byLooseCombinedIsolationDeltaBetaCorr3Hits", bestTau->tauID("byLooseCombinedIsolationDeltaBetaCorr3Hits") );
+                jets->back().addUserInt("byMediumCombinedIsolationDeltaBetaCorr3Hits", bestTau->tauID("byMediumCombinedIsolationDeltaBetaCorr3Hits"));
+                jets->back().addUserInt("byTightCombinedIsolationDeltaBetaCorr3Hits", bestTau->tauID("byTightCombinedIsolationDeltaBetaCorr3Hits"));
             }
         }
     }
 
+    edm::Handle<std::vector<reco::Vertex> > primVtxHandle;                 
+    event.getByLabel("offlinePrimaryVertices", primVtxHandle);
     for ( clone_iter jbegin = imuons.begin(), jend = imuons.end(), j = jbegin; j != jend; ++j ) {
         pat::Muon const * jmuon = dynamic_cast<pat::Muon const *>( j->masterClonePtr().get() );
-        if ( jmuon != 0 )
-            muons->push_back( *jmuon );
+        if ( jmuon == NULL )
+            continue;
+        muons->push_back( *jmuon );
+        muons->back().addUserInt("isTight", ( (jmuon->dB() < 2) && 
+                                              (fabs( jmuon->muonBestTrack()->dz(primVtxHandle->at(0).position()) ) < 0.5 )));
     }
 
     for ( clone_iter jbegin = ielectrons.begin(), jend = ielectrons.end(), j = jbegin; j != jend; ++j ) {
@@ -76,12 +84,15 @@ bool EDSHyFTSelector::filter( edm::Event & event, const edm::EventSetup& eventSe
     }
     std::auto_ptr<float> puWeightPointer(new float);
     (*puWeightPointer) = filter_->puWeight();
+    std::auto_ptr<int> genPVPointer(new int);
+    (*genPVPointer) = filter_->genPV();
     event.put( jets, "jets");
     event.put( mets, "MET");
     event.put( muons, "muons");
     event.put( electrons, "electrons");
     event.put( taus, "taus" );
     event.put( puWeightPointer , "pileUp" );
+    event.put( genPVPointer , "genpv" );
     return passed; 
 }
 
