@@ -124,9 +124,6 @@ class FWLiteAnalysis:
             raise
 
     def fillBinnedHist(self, name, binInfo, value, weight = 1.0):
-        if weight < 0:
-            raise RuntimeError, "Negative pileup weight?: %f" % weight
-
         self.getBin(binInfo)[name].Fill(value, weight)
 
     def getSuffix(self, binInfo):
