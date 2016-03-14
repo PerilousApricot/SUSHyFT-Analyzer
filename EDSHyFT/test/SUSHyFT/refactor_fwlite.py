@@ -61,8 +61,8 @@ class FWLiteAnalysis:
         self.invertTauCut = invertTauCut
         self.flipTauOrder = flipTauOrder
         # stupid global variables
-        self.output = ROOT.TFile(outputFile + ".root", "recreate")
-        print "Openting outputFile %s" % outputFile
+        self.output = ROOT.TFile(outputFile, "recreate", "", ROOT.kZLIB + 9)
+        print "Opening outputFile %s" % outputFile
         self.output.cd()
         self.binnedHists = []
         self.totalEvents = 0
