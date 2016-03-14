@@ -13,6 +13,10 @@ Contact:        Sadia Khalil (skhalil@fnal.gov)
 #include "DataFormats/VertexReco/interface/Vertex.h"
 #include "EgammaAnalysis/ElectronTools/interface/ElectronEffectiveArea.h"
 
+template<typename T, typename U>
+bool my_max(T a, U b) {
+    return (a > b) ? a : b;
+}
 //Math
 //#include "CLHEP/Units/GlobalPhysicalConstants.h"
 typedef math::XYZPoint Point;
@@ -288,7 +292,7 @@ class TopElectronSelector : public Selector<pat::Electron>  {
          Double_t D0    = electron.dB();
          Double_t DZ    = electron.gsfTrack()->dz(PVtx);//
          Double_t Ooemoop = (1.0/electron.ecalEnergy() - electron.eSuperClusterOverP()/electron.ecalEnergy());
-         Double_t RelIso  = ( chIso + max(0.0, nhIso + phIso - rhoIso*AEff) )/ electron.ecalDrivenMomentum().pt();
+         Double_t RelIso  = ( chIso + my_max((double)0.0, (double) (nhIso + phIso - rhoIso*AEff)) )/ electron.ecalDrivenMomentum().pt();
          Int_t mHits   =  electron.gsfTrack()->trackerExpectedHitsInner().numberOfHits();
          Bool_t vtxFitConv = electron.passConversionVeto();
 
