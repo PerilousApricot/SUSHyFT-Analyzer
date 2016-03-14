@@ -21,6 +21,7 @@ class EDSHyFTSelector : public edm::FilterWrapper<SHyFTSelector> {
       produces< std::vector<pat::Tau> >  ("taus");
       produces<float>("pileUp");
       produces<int>("genpv");
+      produces<int>("passTrig");
     };
      
   virtual ~EDSHyFTSelector() {}

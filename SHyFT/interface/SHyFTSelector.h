@@ -47,7 +47,8 @@ class SHyFTSelector : public EventSelector {
         std::vector<reco::ShallowClonePtrCandidate> const & selectedElectrons () const { return selectedElectrons_; }
         std::vector<edm::Ptr<pat::Tau> > const & selectedTaus () const { return selectedTaus_; }
         const float puWeight() { return puWeight_; }
-        const float genPV() { return genPV_; }
+        const int   genPV() { return genPV_; }
+        const int   passTrig() { return passTrig_; }
         //std::vector<reco::ShallowClonePtrCandidate> const & selectedLooseElectrons() const { return selectedLooseElectrons_; }
 
         void printSelectors(std::ostream & out) const {
@@ -168,6 +169,7 @@ class SHyFTSelector : public EventSelector {
 
         float          puWeight_;
         int            genPV_;
+        int            passTrig_;
         edm::InputTag pfEleSrc_;
 
         // Jet energy corrections object

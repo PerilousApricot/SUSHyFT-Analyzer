@@ -86,6 +86,8 @@ bool EDSHyFTSelector::filter( edm::Event & event, const edm::EventSetup& eventSe
     (*puWeightPointer) = filter_->puWeight();
     std::auto_ptr<int> genPVPointer(new int);
     (*genPVPointer) = filter_->genPV();
+    std::auto_ptr<int> passTrigPointer(new int);
+    (*passTrigPointer) = filter_->passTrig();
     event.put( jets, "jets");
     event.put( mets, "MET");
     event.put( muons, "muons");
@@ -93,6 +95,7 @@ bool EDSHyFTSelector::filter( edm::Event & event, const edm::EventSetup& eventSe
     event.put( taus, "taus" );
     event.put( puWeightPointer , "pileUp" );
     event.put( genPVPointer , "genpv" );
+    event.put( passTrigPointer, "passTrig" );
     return passed; 
 }
 
