@@ -342,6 +342,7 @@ class FWLiteAnalysis:
         nTTags = 0
         nAmbiguous = 0
         bTagIndices = []
+        tTagIndices = []
         for index, jetPt in enumerate(jetPts):
             if (jetPt * self.jesScale) < self.jetPtMin:
                 if jetPt >= self.jetPtMin:
@@ -367,14 +368,14 @@ class FWLiteAnalysis:
                 bTagIndices.append(index)
                 nBTags += 1
             elif passTau:
+                tTagIndices.append(index)
                 nTTags += 1
 
             # I'm not convinced this is such a good idea.. count up the number
             # of ambiguous and non-ambiguous jets
             if passB and passTau:
                 nAmbiguous += 1
-        assert (nTTags + nBTags) <= nJets, "Don't double-count events"
-        return nJets, nBTags, nTTags, nAmbiguous, bTagIndices
+        return nJets, nBTags, nTTags, nAmbiguous, bTagIndices, tTagIndices
 
     def metPasses(self, met):
         if self.ignoreMet:
@@ -389,12 +390,12 @@ class FWLiteAnalysis:
         PUWeight = self.getPUWeight(event)
         self.fillSimpleHist("nEvents", 1, 1)
 
-        nJets, nBTags, nTTags, nAmbiguous, bTagIndices = self.countJets(event)
         passTrig = event.getByTitle("passTrig")[0]
         if not self.ignoreTrigger and not passTrig:
             return
         self.fillSimpleHist("nEventsPassTrig", 1, 1)
         
+        nJets, nBTags, nTTags, nAmbiguous, bTagIndices, tTagIndices = self.countJets(event)
         if self.isData:
             eventFlavor = 0
         else:
@@ -528,6 +529,12 @@ class FWLiteAnalysis:
         hT = 0.0
         effs = []
         maxSSVMass = 0.0
+        # remember the truth about this event
+        numB = 0
+        numC = 0
+        numQ = 0
+        # did the reweighing have an effect?
+        shiftedVal = 0
         for ijet, jetPt in enumerate(jetPts):
             ## get the jet 4-vector
             thisJet = ROOT.TLorentzVector()
@@ -577,20 +584,31 @@ class FWLiteAnalysis:
                     eventFlavor = 0
                     iflavor = 0
                     isf = self.sfB
+                    numB += 1
                 elif abs(jetFlavor) == 4:
                     # c-quark
                     eventFlavor = min(eventFlavor, 1)
                     isf = self.sfC
                     iflavor = 1
+                    numC += 1
                 else:
                     # light-quark
                     eventFlavor = min(eventFlavor, 2)
                     isf = self.sfQ
                     iflavor = 2
-                if ijet in bTagIndices:
-                    effs.append(EffInfo(ijet, isf, iflavor))
+                    numQ += 1
+                tausf = 1.0
+                if ijet not in bTagIndices:
+                    isf = 0.0
                 else:
-                    effs.append(EffInfo(ijet, 0.0, iflavor))
+                    if isf != 1.0:
+                        shiftedVal += 1
+                        print "Shifting (%s) sf %s" % (shiftedVal, isf)
+                if ijet not in tTagIndices:
+                    tausf = 0.0
+                if isf != 0.0:
+                    pass #print "eff adding %s %s %s %s - %s %s %s" % (ijet, isf, tausf, iflavor, ijet, bTagIndices, tTagIndices)
+                effs.append(EffInfo(ijet, isf, tausf, iflavor))
 
             allJets.append(thisJet)
             deta = thisJet.Eta() - lepEtas[0]
@@ -643,35 +661,65 @@ class FWLiteAnalysis:
                 return
         
         self.fillSimpleHist("nEventsPassWMT", 1, 1)
+        verbose = 0
         if not self.isData:
             effCombos = EffInfoCombinations(effs, verbose=False)
             fillList = []
             totalCombo = 0
-            for itag in range(0,nJets+1):
-                # probability that you will tag itag jets
-                pTag = effCombos.pTag( itag )
-                jtag = itag
-                if jtag > self.maxBJets:
-                    jtag = self.maxBJets
-                # use pileup reweighting factor
-                totalCombo += pTag
-                pTag*=PUWeight
-                newBinInfo = list(binInfo[:])
-                newBinInfo[1] = jtag
-                # nBjet + nTjet > nJet
-                if jtag + binInfo[2] > binInfo[0]:
-                    newBinInfo[2] = binInfo[0] - jtag
-                if pTag:
-                    fillList.append([newBinInfo, pTag])
-            assert totalCombo > 0.99, "Total probability was %f" % totalCombo
-            assert totalCombo < 1.01, "Total probability was %f" % totalCombo
+            totalBeff = 0
+            totalTeff = 0
+            verbose = 0
+            if shiftedVal:
+                if (nBTags == 0 and nTTags == 0):
+                    verbose = 1
+                    print "processing"
+                else:
+                    verbose = 1
+                    print "Shifted %sj %sb %st" % (nJets, nBTags, nTTags)
+            for btag_orig in range(0,nJets+1):
+                for ttag in range(0,nJets+1):
+                    # probability that you will tag btag jets
+                    oldTag = effCombos.pTag( btag_orig )
+                    beff, teff, combinedeff = effCombos.pTag2( btag_orig, ttag )
+                    btag = btag_orig
+                    if btag_orig > self.maxBJets:
+                        btag = self.maxBJets
+                    if ttag > self.maxTaus:
+                        ttag = self.maxTaus
+                    assert(oldTag == beff)
+                    if (ttag == 0):
+                        totalBeff += beff
+                    if (btag == 0):
+                        totalTeff += teff
+                    # use pileup reweighting factor
+                    pTag = beff * teff
+                    if verbose and teff != 0.0:
+                        print "New event %s %s eff %s" % (btag_orig, ttag, (beff,teff,pTag))
+                    totalCombo += pTag
+                    pTagAndPU = pTag * PUWeight
+                    newBinInfo = list(binInfo[:])
+                    newBinInfo[1] = btag
+                    newBinInfo[2] = ttag
+
+                    # nBjet + nTjet > nJet
+                    if pTag != 0.0 and btag + ttag > binInfo[0]:
+                        print "rewrite event"
+                        newBinInfo[2] = binInfo[0] - btag
+                    if pTag != 0.0:
+                        fillList.append([newBinInfo, pTagAndPU, pTag])
+            if verbose or (abs(1-totalCombo) > 0.01):
+                print "*New Event %s %s" % (nJets, (numB, numC, numQ))
+                for row in fillList:
+                    print "  PU: %2.4f NPU: %2.4f - %s - %s" % (row[1], row[2], row[0], [(x.beff, x.teff) for x in effs])
+
+            assert(abs(1.0 - totalCombo) <  0.01), "Total probability was %f - %s " % (totalCombo, (binInfo,totalTeff,totalBeff))
+            globalKey = (numB, numC, numQ, nJets, nBTags, nTTags)
+            self.globalCounter[globalKey] = self.globalCounter.get(globalKey, 0) + 1      
         else:
-            fillList = [[binInfo, 1]]
+            fillList = [[binInfo, 1, 1]]
         vertices = event.getByTitle("vertices")[0]
         self.fillSimpleHist("nEventsPassAll", 1, 1)
-        for binInfo, PUWeight in fillList:
-            if PUWeight < 0:
-                raise RuntimeError, "Negative pileup weight?: %f" % PUWeight
+        for binInfo, PUWeight, NPUWeight in fillList:
             # do the combinatorials
             if leadingBJet:
                 singleTopDiscriminatorT = (leadingBJet + lepVector + metVector).Mt()
