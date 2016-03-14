@@ -51,7 +51,7 @@ options.register('eleTriggerName',
                  "trigger to run for ele paths")
 
 options.register('muTriggerName',
-                 'HLT_IsoMu24_eta2p1_v,HLT_Mu30_eta2p1_v,HLT_Mu40_eta2p1_v',
+                 'HLT_IsoMu24_eta2p1_v',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.string,
                  "trigger to run for muon paths")
@@ -75,6 +75,11 @@ options.register('ignoreTrigger',
                  "Ignore trigger bits (1) or not (0)")
 
 options.register('minJets',
+                 0,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
+                 "Minimum number of jets per event")
+options.register('newConfig',
                  0,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
@@ -132,9 +137,10 @@ if useData:
         ]
 else :
     inputFiles = [
-            '/store/user/gurrola/DY4JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/DY4JetsToLL_M-50_SkimPat/405381fe00d9112adafce059de4ce799/skimPat_1000_1_GJN.root',
+            '/store/user/meloam/ra2tau_pat_8TeV/WJetsToLNu_matchingdown_8TeV-madgraph-tauola/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/160210_195926/0000/skimPat_79.root',]
+#            '/store/user/gurrola/DY4JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/DY4JetsToLL_M-50_SkimPat/405381fe00d9112adafce059de4ce799/skimPat_1000_1_GJN.root',
 #'file:///scratch/meloam/SUSHyFT-Scripts/checkouts/pat/src/HighMassAnalysis/Configuration/test/Data_TauTauSkim/skimPat.root']
- #   nothingFiles=[
+    nothingFiles=[
 '/store/user/meloam/ra2tau_pat_8TeV/DY4JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014400/0000/skimPat_1.root',
 '/store/user/gurrola/DY1JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/DY1JetsToLL_M-50_SkimPat/405381fe00d9112adafce059de4ce799/skimPat_752_1_I91.root',
 '/store/user/meloam/ra2tau_pat_8TeV/DY2JetsToLL_M-50_TuneZ2Star_8TeV-madgraph/ra2tau_skim2015_v5_Summer12_DR53X-PU_S10_START53_V7A-v1/150721_014310/0000/skimPat_101.root',
@@ -153,6 +159,8 @@ else :
             #'root://xrootd.unl.edu//store/user/lpctlbsm/meloam/GJets_HT-200To400_8TeV-madgraph/Summer12_DR53X-PU_S10_START53_V7A-v1_TLBSM_53x_v3/99bd99199697666ff01397dad5652e9e/tlbsm_53x_v3_mc_425_1_CX2.root'
         ]
 
+if options.inputFiles:
+    inputFiles = options.inputFiles
 process.source = cms.Source("PoolSource",
                                 fileNames = cms.untracked.vstring( inputFiles )
 )
@@ -365,15 +373,28 @@ process.pfShyftTupleMETMu = cms.EDProducer(
 
 
 process.p1 = cms.Path()
+process.nEventsTotal = cms.EDProducer("EventCountProducer")
+process.nEventsFiltered = cms.EDProducer("EventCountProducer")
 if options.runMuons:
-    process.p1 = cms.Path(
-        process.pfShyftProducerMu*
-        process.pfShyftTupleJetsMu*
-        process.pfShyftTupleMuons*
-        process.pfShyftTupleElectrons*
-        process.pfShyftTupleMETMu
-        #process.pfShyftTupleTausMu
-        )
+    if options.newConfig:
+        process.p1 = cms.Path(
+            process.nEventsTotal*
+            process.pfShyftProducerMu*
+            process.pfShyftTupleJetsMu*
+            process.pfShyftTupleMuons*
+            process.pfShyftTupleElectrons*
+            process.pfShyftTupleMETMu*
+            process.nEventsFiltered
+            )
+    else:
+        process.p1 = cms.Path(
+            process.pfShyftProducerMu*
+            process.pfShyftTupleJetsMu*
+            process.pfShyftTupleMuons*
+            process.pfShyftTupleElectrons*
+            process.pfShyftTupleMETMu
+            #process.pfShyftTupleTausMu
+            )
 
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 
@@ -384,11 +405,13 @@ process.out = cms.OutputModule("PoolOutputModule",
                                outputCommands = cms.untracked.vstring('drop *',
                                                                       'keep *_*_genpv_*',
                                                                       'keep *_*_pileUp_*',
+                                                                      'keep *_*_passTrig_*',
                                                                       'keep *_pfShyftTuple*_*_*',
                                                                       'keep *_pdfWeightProducer_*_*',
                                                                       'keep *_patTriggerEvent_*_*',
                                                                       'keep edmTriggerResults_TriggerResults__HLT',
-                                                                      'keep patTriggerPaths_patTrigger_*_*'
+                                                                      'keep patTriggerPaths_patTrigger_*_*',
+                                                                      'keep *_nEvents*_*_ANA'
                                                                       )
                                )
 process.outpath = cms.EndPath(process.out)
