@@ -262,17 +262,43 @@ class FWLiteAnalysis:
             PUWeight = 1
         return PUWeight
 
-    def handleLepton(self, event, lepStr, minPt):
-        lepCount = 0
+    def getPassingLeptons(self, event, lepStr, minPt):
+        retval = []
         lepPts = event.getByTitle(lepStr + 'Pt')
         lepEtas = event.getByTitle("lepEtas")
         if not lepPts or not lepEtas:
             raise RuntimeError, "can't get PT or eta"
-        for lepPt, lepEta in itertools.izip(lepPts, lepEtas):
+        for idx, lepPt, lepEta in itertools.izip(range(len(lepPts)), lepPts, lepEtas):
             if lepPt > minPt and abs(lepEta) < 2.1:
-                lepCount += 1
-        return lepCount
+                retval.append(idx)
+        return retval
     
+    def handleLepton(self, event, lepStr, minPt):
+        return len(self.getPassingLeptons(event, lepStr, minPt))
+
+    def getLeptonSF(self, event, lepStr, minPt):
+        sf = 1.0
+        return 1.0
+        # We're cutting at abseta = 2.1
+        etaCuts = [ (0.9, "eta0to0p9"),
+                    (1.9, "eta0p9to1p2"),
+                    (9999, "eta1p2to2p1") ]
+        if not self.isData:
+            passing = self.getPassingLeptons(event, lepStr, minPt)
+            lepPts = event.getByTitle(lepStr + 'Pt')
+            lepEtas = event.getByTitle("lepEtas")
+            for i in passing:
+                eta = abs(lepEtas[i])
+                for (maxEta, suffix) in etaCuts:
+                    if eta <= maxEta:
+                        pt = lepPts[i]
+                        titles = ("lepId", "lepIso", "lepTrigger")
+                        for eff in [x + suffix for x in titles]:
+                            hist = getattr(event, eff)
+                            sf *= hist.GetBinContent(hist.GetBin(pt))
+
+        return sf
+
     def leptonCut(self, event):
          # Always require exactly one muon. future should be different leps.
         eleCount = self.handleLepton(event, "ele", 20)
@@ -384,6 +410,7 @@ class FWLiteAnalysis:
         eleCount2Mu = self.handleLepton(event, "ele", 15)
         muonCount30Gev = self.handleLepton(event, "mu", 35)
         muonCount2Mu = self.handleLepton(event, "mu", 15)
+        lepEff2Mu = self.getLeptonSF(event, "mu", 15)
         lepPts = event.getByTitle("lepPts")
         lepEtas = event.getByTitle("lepEtas")
         lepPhis = event.getByTitle("lepPhis")
@@ -432,38 +459,35 @@ class FWLiteAnalysis:
             if muonCount2Mu > 2:
                 self.fillBinnedHist("gt2MuonInvMass", binInfo,
                                     currCloseValue,
-                                    PUWeight)
+                                    PUWeight * lepEff2Mu)
             if muonCount2Mu == 2:
                 self.fillSimpleHist("nEventsPass2", 1, 1)
                 self.fillBinnedHist("2MuonInvMass", binInfo,
                                     currCloseValue,
-                                    PUWeight)
+                                    PUWeight * lepEff2Mu)
                 self.fillBinnedHist("MET2Mu", binInfo,
                                     metRaw,
-                                    PUWeight)
+                                    PUWeight * lepEff2Mu)
 
 
             if muonCount2Mu == 3:
                 self.fillSimpleHist("nEventsPass3", 1, 1)
                 self.fillBinnedHist("3MuonInvMass", binInfo,
                                     currCloseValue,
-                                    PUWeight)
+                                    PUWeight * lepEff2Mu)
                 self.fillBinnedHist("MET3Mu", binInfo,
                                     metRaw,
-                                    PUWeight)
+                                    PUWeight * lepEff2Mu)
 
 
             if muonCount2Mu == 4:
                 self.fillSimpleHist("nEventsPass4", 1, 1)
                 self.fillBinnedHist("4MuonInvMass", binInfo,
                                     currCloseValue,
-                                    PUWeight)
+                                    PUWeight * lepEff2Mu)
                 self.fillBinnedHist("MET4Mu", binInfo,
                                     metRaw,
-                                    PUWeight)
-
-
-
+                                    PUWeight * lepEff2Mu)
 
         if nJets == 0:
             return
@@ -686,7 +710,9 @@ class SHyFTEventInfo:
 
 class ROOTEventInfo(SHyFTEventInfo):
     """ thin wrapper around ROOT events """
-    def __init__(self, lepStr, postfix, puMCInput, puDataInput):
+    def __init__(self, lepStr, postfix, puMCInput, puDataInput,
+                                        lepIdInput, lepIsoInput,
+                                        lepTriggerInput):
         self.jetPtHandle         = Handle( "std::vector<float>" )
         self.jetPtLabel    = ( "pfShyftTupleJets" + lepStr +  postfix,   "pt" )
         self.genJetPtHandle          = Handle( "std::vector<float>" )
@@ -764,6 +790,27 @@ class ROOTEventInfo(SHyFTEventInfo):
         self.puInfoHandle = Handle("std::vector<PileupSummaryInfo>")
         self.vertH = Handle("int")
         self.vertLabel = ("pfShyftProducer" + lepStr +  postfix ,"genpv")
+        self.lepIdFile = ROOT.TFile().Open(lepIdInput)
+        self.lepIsoFile = ROOT.TFile().Open(lepIsoInput)
+        self.lepTriggerFile = ROOT.TFile().Open(lepTriggerInput)
+        etaRanges = ["eta0to0p9", "eta0p9to1p2", "eta1p2to2p1"]
+        
+        idSuffixes = ["_pt_abseta<0.9", "_pt_abseta0.9-1.2", "_pt_abseta1.2-2p1"]
+        isoSuffixes = ["_pt_abseta<0.9", "_pt_abseta0.9-1.2", "_pt_abseta1.2-2p1"]
+        triggerSuffixes = ["_Barrel_0to0p9_pt25-500_2012ABCD",
+                           "_Transition_0p9to1p2_pt25-500_2012ABCD",
+                           "_Endcaps_1p2to2p1_pt25-500_2012ABCD"]
+        
+        idNames = ["DATA_over_MC_Loose" + x for x in idSuffixes]
+        isoNames = ["DATA_over_MC_combRelIsoPF04dBeta<02_Loose" + x for \
+                        x in isoSuffixes]
+        triggerNames = ["IsoMu24_eta2p1_DATA_over_MC_TightID_PT_ABSETA" + x for\
+                            x in triggerSuffixes]
+        for x in range(len(etaRanges)):
+            print "setting %s" % ('lepId' + etaRanges[x]) 
+            setattr(self, 'lepId' + etaRanges[x], self.lepIdFile.Get(idNames[x]))
+            setattr(self, 'lepIso' + etaRanges[x], self.lepIsoFile.Get(isoNames[x]))
+            setattr(self, 'lepTrigger' + etaRanges[x], self.lepTriggerFile.Get(triggerNames[x]))
         
         self.varLookup = {}
         self.varLookup['tauPts'] = (self.jetTauPtLabel, self.jetTauPtHandle)
@@ -934,6 +981,19 @@ def getParser(default=None):
                       default='S10MC_PUFile.root' if default else None,
                       dest='puMCInput',
                       help='Input MC PU distribution')
+    # Lepton efficiencies
+    parser.add_option('--lepIdInput', metavar='P', type='string', action='store',
+                      default='muonIdEff.root' if default else None,
+                      help='LeptonIdEfficniency')
+    parser.add_option('--lepIsoInput', metavar='P', type='string', action='store',
+                      default='muonIsoEff.root' if default else None,
+                      help='LeptonIsoEfficniency')
+    parser.add_option('--lepTriggerInput', metavar='P', type='string', action='store',
+                      default='muonTriggerEff.root' if default else None,
+                      help='LeptonTriggerEfficniency')
+
+
+
 
     parser.add_option('--metMin', metavar='P', type='string', action='store',
                       default=20 if default else None,
@@ -1048,6 +1108,9 @@ if len(splitArgs) == 1:
     eventWrapperList.append(ROOTEventInfo(lepStr='Mu',
                                             postfix='',
                                             #trigger='HLT_IsoMu24_eta2p1_v',
+                                            lepIdInput=options.lepIdInput,
+                                            lepIsoInput=options.lepIsoInput,
+                                            lepTriggerInput=options.lepTriggerInput,
                                             puMCInput=options.puMCInput,
                                             puDataInput=options.puDataInput))
 else:
