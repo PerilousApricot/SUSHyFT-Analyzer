@@ -43,7 +43,8 @@ class FWLiteAnalysis:
                         sfTau = 1.0,
                         wMTCut = None,
                         jesScale = 1.0,
-                        sfNotTau = 1.0):
+                        sfNotTau = 1.0,
+                        ignoreTrigger = False):
         self.simpleHists = {}
         self.binnedHists = {}
         self.maxJets = maxJets
@@ -60,6 +61,7 @@ class FWLiteAnalysis:
         self.lowMet = lowMET
         self.invertTauCut = invertTauCut
         self.flipTauOrder = flipTauOrder
+        self.ignoreTrigger = ignoreTrigger
         # stupid global variables
         self.output = ROOT.TFile(outputFile, "recreate", "", ROOT.kZLIB + 9)
         print "Opening outputFile %s" % outputFile
@@ -138,6 +140,7 @@ class FWLiteAnalysis:
     def makeHistograms(self):
         p = [
              ["nEvents", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
+             ["nEventsPassTrig", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
              ["nEventsPassAll", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
              ["nEventsPass2", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
              ["nEventsPass3", "Number of Events;N_{events };Number", 5, 0.5, 4.5],
@@ -361,6 +364,11 @@ class FWLiteAnalysis:
         self.fillSimpleHist("nEvents", 1, 1)
 
         nJets, nBTags, nTTags, nAmbiguous, bTagIndices = self.countJets(event)
+        passTrig = event.getByTitle("passTrig")[0]
+        if not self.ignoreTrigger and not passTrig:
+            return
+        self.fillSimpleHist("nEventsPassTrig", 1, 1)
+        
         if self.isData:
             eventFlavor = 0
         else:
@@ -735,7 +743,9 @@ class ROOTEventInfo(SHyFTEventInfo):
 
         self.triggerHandle = Handle( "edm::TriggerResults" )
         self.triggerLabel = ( "edmTriggerResults", "TriggerResults" )
-
+        
+        self.passTrigHandle = Handle("int")
+        self.passTrigLabel = ("pfShyftProducer" + lepStr + postfix, "passTrig")
         self.metHandle = Handle( "std::vector<float>" )
         self.metLabel = ("pfShyftTupleMET" + lepStr +  postfix,   "pt" )
         self.metPhiHandle = Handle( "std::vector<float>" )
@@ -772,6 +782,7 @@ class ROOTEventInfo(SHyFTEventInfo):
         self.varLookup['puInfo'] = (self.puInfoLabel, self.puInfoHandle) 
         self.varLookup['vertices'] = (self.vertLabel, self.vertH)
         self.varLookup['trigger'] = (self.triggerLabel, self.triggerHandle)
+        self.varLookup['passTrig'] = (self.passTrigLabel, self.passTrigHandle)
         if lepStr == 'Mu':
             self.varLookup['lepPts'] = (self.muonPtLabel, self.muonPtHandle)
             self.varLookup['lepEtas'] = (self.muonEtaLabel, self.muonEtaHandle)
@@ -939,6 +950,9 @@ def getParser(default=None):
                       dest='wMTCut',
                       help='Cut on wMT > 50GeV? (up, down, nominal')
 
+    parser.add_option('--ignoreTrigger', action='store_true',
+                        help='Ignore trigger bits')
+
 
 
 
@@ -1023,6 +1037,7 @@ if len(splitArgs) == 1:
                                        jetPt=options.jetPt,
                                        invertTauCut=options.invertTauCut,
                                        wMTCut = options.wMTCut,
+                                       ignoreTrigger = options.ignoreTrigger,
                                        sfB = sfB,
                                        sfC = sfC,
                                        sfQ = sfQ,
