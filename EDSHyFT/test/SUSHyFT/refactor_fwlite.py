@@ -75,6 +75,7 @@ class FWLiteAnalysis:
         self.jecScale = jecScale
         self.jesScale = jesScale
         self.wMTCut = wMTCut
+        self.globalCounter = {}
         if self.isData:
             self.flavorNames = [""]
         else:
@@ -1125,6 +1126,8 @@ if events.size():
         stopTime = time.time()
 for analyze in analyzerList:
     analyze.close()
+    for k in analyze.globalCounter:
+        print "%s - %s" % (analyze.globalCounter[k], k)
 elaspedTime = stopTime - startTime
 print "Processed %s events in %.2f seconds %7.0f ev/sec" % (currentEvent, 
                                                             elaspedTime,
